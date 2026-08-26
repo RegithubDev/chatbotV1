@@ -1,0 +1,2728 @@
+[
+  {
+    "table": "auth_group",
+    "text": "Table: auth_group\nColumns: id INTEGER, name VARCHAR(150)\nPrimary keys: id\nForeign keys: ",
+    "foreign_keys": []
+  },
+  {
+    "table": "auth_group_permissions",
+    "text": "Table: auth_group_permissions\nColumns: id BIGINT, group_id INTEGER, permission_id INTEGER\nPrimary keys: id\nForeign keys: ['permission_id'] references auth_permission.['id']; ['group_id'] references auth_group.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "permission_id"
+        ],
+        "referred_table": "auth_permission",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "group_id"
+        ],
+        "referred_table": "auth_group",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "auth_permission",
+    "text": "Table: auth_permission\nColumns: id INTEGER, name VARCHAR(255), content_type_id INTEGER, codename VARCHAR(100)\nPrimary keys: id\nForeign keys: ['content_type_id'] references django_content_type.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "content_type_id"
+        ],
+        "referred_table": "django_content_type",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_aakricontactnumber",
+    "text": "Table: backend_aakricontactnumber\nColumns: id BIGINT, phone_number VARCHAR(15), is_kerala TINYINT\nPrimary keys: id\nForeign keys: ",
+    "foreign_keys": []
+  },
+  {
+    "table": "backend_add_wallet_money_log",
+    "text": "Table: backend_add_wallet_money_log\nColumns: id BIGINT, created_at DATETIME, customer_id BIGINT, order_id VARCHAR(255), cf_order_id VARCHAR(255), order_amount DOUBLE, order_status VARCHAR(255)\nPrimary keys: id\nForeign keys: ['customer_id'] references backend_customer.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "customer_id"
+        ],
+        "referred_table": "backend_customer",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_adminlog",
+    "text": "Table: backend_adminlog\nColumns: id BIGINT, changing_id INTEGER, action VARCHAR(255), description LONGTEXT, page_name VARCHAR(255), access_time DATETIME, user_id BIGINT\nPrimary keys: id\nForeign keys: ['user_id'] references backend_adminuser.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "user_id"
+        ],
+        "referred_table": "backend_adminuser",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_adminmodule",
+    "text": "Table: backend_adminmodule\nColumns: id BIGINT, module VARCHAR(255), is_active TINYINT, role_active TINYINT, role_id BIGINT\nPrimary keys: id\nForeign keys: ['role_id'] references backend_adminrole.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "role_id"
+        ],
+        "referred_table": "backend_adminrole",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_adminrole",
+    "text": "Table: backend_adminrole\nColumns: id BIGINT, role_name VARCHAR(500), is_active TINYINT\nPrimary keys: id\nForeign keys: ",
+    "foreign_keys": []
+  },
+  {
+    "table": "backend_adminsubmodule",
+    "text": "Table: backend_adminsubmodule\nColumns: id BIGINT, submodule VARCHAR(255), is_active TINYINT, role_active TINYINT, role_id BIGINT\nPrimary keys: id\nForeign keys: ['role_id'] references backend_adminrole.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "role_id"
+        ],
+        "referred_table": "backend_adminrole",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_adminsubsection",
+    "text": "Table: backend_adminsubsection\nColumns: id BIGINT, subsection VARCHAR(500), is_active TINYINT, role_active TINYINT, role_id BIGINT\nPrimary keys: id\nForeign keys: ['role_id'] references backend_adminrole.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "role_id"
+        ],
+        "referred_table": "backend_adminrole",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_adminuser",
+    "text": "Table: backend_adminuser\nColumns: id BIGINT, password VARCHAR(128), last_login DATETIME, is_superuser TINYINT, username VARCHAR(150), is_staff TINYINT, date_joined DATETIME, full_name VARCHAR(50), phone_number VARCHAR(20), email VARCHAR(254), is_active TINYINT, is_deleted TINYINT, admin_role_id BIGINT, token_at DATETIME\nPrimary keys: id\nForeign keys: ['admin_role_id'] references backend_adminrole.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "admin_role_id"
+        ],
+        "referred_table": "backend_adminrole",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_adminuser_groups",
+    "text": "Table: backend_adminuser_groups\nColumns: id BIGINT, adminuser_id BIGINT, group_id INTEGER\nPrimary keys: id\nForeign keys: ['adminuser_id'] references backend_adminuser.['id']; ['group_id'] references auth_group.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "adminuser_id"
+        ],
+        "referred_table": "backend_adminuser",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "group_id"
+        ],
+        "referred_table": "auth_group",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_adminuser_user_permissions",
+    "text": "Table: backend_adminuser_user_permissions\nColumns: id BIGINT, adminuser_id BIGINT, permission_id INTEGER\nPrimary keys: id\nForeign keys: ['adminuser_id'] references backend_adminuser.['id']; ['permission_id'] references auth_permission.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "adminuser_id"
+        ],
+        "referred_table": "backend_adminuser",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "permission_id"
+        ],
+        "referred_table": "auth_permission",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_adminuserdistrict",
+    "text": "Table: backend_adminuserdistrict\nColumns: id BIGINT, admin_user_id BIGINT, district_id BIGINT\nPrimary keys: id\nForeign keys: ['admin_user_id'] references backend_adminuser.['id']; ['district_id'] references backend_district.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "admin_user_id"
+        ],
+        "referred_table": "backend_adminuser",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "district_id"
+        ],
+        "referred_table": "backend_district",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_adminuserstate",
+    "text": "Table: backend_adminuserstate\nColumns: id BIGINT, admin_user_id BIGINT, state_id BIGINT\nPrimary keys: id\nForeign keys: ['admin_user_id'] references backend_adminuser.['id']; ['state_id'] references backend_state.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "admin_user_id"
+        ],
+        "referred_table": "backend_adminuser",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "state_id"
+        ],
+        "referred_table": "backend_state",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_appversioncode",
+    "text": "Table: backend_appversioncode\nColumns: id BIGINT, platform VARCHAR(50), version_code VARCHAR(50), force_update TINYINT, message LONGTEXT, stable_version LONGTEXT, link LONGTEXT, created_at DATETIME, application VARCHAR(50)\nPrimary keys: id\nForeign keys: ",
+    "foreign_keys": []
+  },
+  {
+    "table": "backend_assignedvehicle",
+    "text": "Table: backend_assignedvehicle\nColumns: id BIGINT, vehicle_id BIGINT, provider_id BIGINT\nPrimary keys: id\nForeign keys: ['provider_id'] references backend_provider.['id']; ['vehicle_id'] references backend_pickupvehicle.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "provider_id"
+        ],
+        "referred_table": "backend_provider",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "vehicle_id"
+        ],
+        "referred_table": "backend_pickupvehicle",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_biowastecategory",
+    "text": "Table: backend_biowastecategory\nColumns: id BIGINT, category_name VARCHAR(100), image VARCHAR(100), is_active TINYINT\nPrimary keys: id\nForeign keys: ",
+    "foreign_keys": []
+  },
+  {
+    "table": "backend_biowasteordercart",
+    "text": "Table: backend_biowasteordercart\nColumns: id BIGINT, is_deleted TINYINT, biowaste_order_id BIGINT, biowaste_type_id BIGINT, captured_weight DOUBLE, captured_price DOUBLE, bio_weight DOUBLE, bio_price DOUBLE, total_price DOUBLE, is_payable TINYINT, is_kg TINYINT, cgst_rate DOUBLE, sgst_rate DOUBLE, cgst_charges DOUBLE, sgst_charges DOUBLE, taxable_amount DOUBLE, total_amount_incl DOUBLE\nPrimary keys: id\nForeign keys: ['biowaste_order_id'] references backend_biowasteorders.['id']; ['biowaste_type_id'] references backend_biowastetype.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "biowaste_order_id"
+        ],
+        "referred_table": "backend_biowasteorders",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "biowaste_type_id"
+        ],
+        "referred_table": "backend_biowastetype",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_biowasteorders",
+    "text": "Table: backend_biowasteorders\nColumns: id BIGINT, order_code VARCHAR(50), order_date DATETIME, schedule_date DATE, order_rating DOUBLE, alternate_number VARCHAR(20), bill_type VARCHAR(20), prefered_payment_method VARCHAR(20), comment LONGTEXT, order_status VARCHAR(20), platform VARCHAR(20), is_deleted TINYINT, address_id BIGINT, reason_id BIGINT, state_id BIGINT, ward_id BIGINT, customer_id BIGINT, order_age INTEGER, gst_percentage DOUBLE, gst_type VARCHAR(20), bio_price DOUBLE\nPrimary keys: id\nForeign keys: ['address_id'] references backend_customeraddress.['id']; ['customer_id'] references backend_customer.['id']; ['reason_id'] references backend_ordercancelreason.['id']; ['state_id'] references backend_state.['id']; ['ward_id'] references backend_ward.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "address_id"
+        ],
+        "referred_table": "backend_customeraddress",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "customer_id"
+        ],
+        "referred_table": "backend_customer",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "reason_id"
+        ],
+        "referred_table": "backend_ordercancelreason",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "state_id"
+        ],
+        "referred_table": "backend_state",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "ward_id"
+        ],
+        "referred_table": "backend_ward",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_biowastetype",
+    "text": "Table: backend_biowastetype\nColumns: id BIGINT, biowaste_name VARCHAR(100), image VARCHAR(100), is_active TINYINT, biowaste_category_id BIGINT\nPrimary keys: id\nForeign keys: ['biowaste_category_id'] references backend_biowastecategory.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "biowaste_category_id"
+        ],
+        "referred_table": "backend_biowastecategory",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_biowastetypeanalytics",
+    "text": "Table: backend_biowastetypeanalytics\nColumns: id BIGINT, date DATE, total_weight DOUBLE, total_price DOUBLE, order_count INTEGER, biowaste_type_id BIGINT, district_id BIGINT, state_id BIGINT\nPrimary keys: id\nForeign keys: ['biowaste_type_id'] references backend_biowastetype.['id']; ['district_id'] references backend_district.['id']; ['state_id'] references backend_state.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "biowaste_type_id"
+        ],
+        "referred_table": "backend_biowastetype",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "district_id"
+        ],
+        "referred_table": "backend_district",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "state_id"
+        ],
+        "referred_table": "backend_state",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_bwgbagprice",
+    "text": "Table: backend_bwgbagprice\nColumns: id BIGINT, bag_size VARCHAR(20), bag_price DOUBLE, bag_cgst DOUBLE, bag_sgst DOUBLE, client_id BIGINT, is_active TINYINT\nPrimary keys: id\nForeign keys: ['client_id'] references backend_bwgclient.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "client_id"
+        ],
+        "referred_table": "backend_bwgclient",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_bwgclient",
+    "text": "Table: backend_bwgclient\nColumns: id BIGINT, full_name VARCHAR(300), email VARCHAR(254), phone_number VARCHAR(20), bio_order TINYINT, scrap_order TINYINT, address LONGTEXT, family_number INTEGER, client_price DOUBLE, client_cgst DOUBLE, client_sgst DOUBLE, verification_status VARCHAR(10), date_joined DATETIME, is_active TINYINT, is_deleted TINYINT, district_id BIGINT, state_id BIGINT, ward_id BIGINT, alternate_number VARCHAR(20), client_category VARCHAR(100), remark LONGTEXT, service_type JSON, scrap_region_id BIGINT, contract VARCHAR(100), contract_end_date DATE, contract_start_date DATE, approve_request_id BIGINT, request_approved TINYINT, gst_name VARCHAR(500), gst_no VARCHAR(100), account_number VARCHAR(100), ifsc_code VARCHAR(100), password VARCHAR(100), plain_password VARCHAR(100), username VARCHAR(100), collection_frequency VARCHAR(10), monthly_contract TINYINT\nPrimary keys: id\nForeign keys: ['approve_request_id'] references backend_bwgclientrequest.['id']; ['district_id'] references backend_district.['id']; ['scrap_region_id'] references backend_scrapregion.['id']; ['state_id'] references backend_state.['id']; ['ward_id'] references backend_ward.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "approve_request_id"
+        ],
+        "referred_table": "backend_bwgclientrequest",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "district_id"
+        ],
+        "referred_table": "backend_district",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "scrap_region_id"
+        ],
+        "referred_table": "backend_scrapregion",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "state_id"
+        ],
+        "referred_table": "backend_state",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "ward_id"
+        ],
+        "referred_table": "backend_ward",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_bwgclientmonthlysettlement",
+    "text": "Table: backend_bwgclientmonthlysettlement\nColumns: id BIGINT, is_partial TINYINT, amount DOUBLE, partial_balance DOUBLE, done_by LONGTEXT, remark LONGTEXT, created_at DATETIME, admin_id BIGINT, bwg_month_invoice_id BIGINT, client_id BIGINT, settle_mode VARCHAR(100)\nPrimary keys: id\nForeign keys: ['admin_id'] references backend_adminuser.['id']; ['bwg_month_invoice_id'] references backend_bwgclientmothlyinvoice.['id']; ['client_id'] references backend_bwgclient.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "admin_id"
+        ],
+        "referred_table": "backend_adminuser",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "bwg_month_invoice_id"
+        ],
+        "referred_table": "backend_bwgclientmothlyinvoice",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "client_id"
+        ],
+        "referred_table": "backend_bwgclient",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_bwgclientmothlyinvoice",
+    "text": "Table: backend_bwgclientmothlyinvoice\nColumns: id BIGINT, invoice_month VARCHAR(100), invoice_year INTEGER, invoice VARCHAR(100), created_at DATETIME, client_id BIGINT, bill_amount DOUBLE, is_paid TINYINT, settle_date DATE\nPrimary keys: id\nForeign keys: ['client_id'] references backend_bwgclient.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "client_id"
+        ],
+        "referred_table": "backend_bwgclient",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_bwgclientrequest",
+    "text": "Table: backend_bwgclientrequest\nColumns: id BIGINT, full_name VARCHAR(300), phone_number VARCHAR(20), service_type JSON, address LONGTEXT, landmark VARCHAR(100), alternate_number VARCHAR(20), client_category VARCHAR(100), appointment_date DATE, remark LONGTEXT, verification_status VARCHAR(10), state_id BIGINT, bio_pickup TINYINT, scrap_pickup TINYINT, house_name VARCHAR(100), house_number VARCHAR(100), created_at DATETIME, account_number VARCHAR(100), ifsc_code VARCHAR(100), collection_frequency VARCHAR(10), family_number INTEGER, is_confirmed TINYINT, call_center_remark LONGTEXT\nPrimary keys: id\nForeign keys: ['state_id'] references backend_state.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "state_id"
+        ],
+        "referred_table": "backend_state",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_bwgmonthlycontractamount",
+    "text": "Table: backend_bwgmonthlycontractamount\nColumns: id BIGINT, contract_amount DOUBLE, client_id BIGINT, contract_cgst DOUBLE, contract_sgst DOUBLE, created_at DATETIME\nPrimary keys: id\nForeign keys: ['client_id'] references backend_bwgclient.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "client_id"
+        ],
+        "referred_table": "backend_bwgclient",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_bwgordercart",
+    "text": "Table: backend_bwgordercart\nColumns: id BIGINT, scrap_weight DOUBLE, scrap_price DOUBLE, total_price DOUBLE, is_deleted TINYINT, biowaste_type_id BIGINT, bwg_order_id BIGINT, scrap_type_id BIGINT, scrap_gst DOUBLE, scrap_hsn VARCHAR(10)\nPrimary keys: id\nForeign keys: ['biowaste_type_id'] references backend_biowastetype.['id']; ['bwg_order_id'] references backend_bwgorders.['id']; ['scrap_type_id'] references backend_scraptype.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "biowaste_type_id"
+        ],
+        "referred_table": "backend_biowastetype",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "bwg_order_id"
+        ],
+        "referred_table": "backend_bwgorders",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "scrap_type_id"
+        ],
+        "referred_table": "backend_scraptype",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_bwgorders",
+    "text": "Table: backend_bwgorders\nColumns: id BIGINT, order_code VARCHAR(50), order_date DATETIME, schedule_date DATE, order_rating DOUBLE, order_type VARCHAR(20), bill_type VARCHAR(20), prefered_payment_method VARCHAR(20), comment LONGTEXT, order_status VARCHAR(20), is_deleted TINYINT, client_id BIGINT, state_id BIGINT, due_settled TINYINT, reason_id BIGINT\nPrimary keys: id\nForeign keys: ['client_id'] references backend_bwgclient.['id']; ['reason_id'] references backend_ordercancelreason.['id']; ['state_id'] references backend_state.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "client_id"
+        ],
+        "referred_table": "backend_bwgclient",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "reason_id"
+        ],
+        "referred_table": "backend_ordercancelreason",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "state_id"
+        ],
+        "referred_table": "backend_state",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_bwgorderusedbag",
+    "text": "Table: backend_bwgorderusedbag\nColumns: id BIGINT, number_of_bags INTEGER, total_bag_price DOUBLE, cgst_price DECIMAL(10, 2), sgst_price DECIMAL(10, 2), final_price DOUBLE, bag_date DATETIME, is_deleted TINYINT, bag_id BIGINT, order_id BIGINT\nPrimary keys: id\nForeign keys: ['bag_id'] references backend_bwgbagprice.['id']; ['order_id'] references backend_completeorders.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "bag_id"
+        ],
+        "referred_table": "backend_bwgbagprice",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "order_id"
+        ],
+        "referred_table": "backend_completeorders",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_bwgscrapprice",
+    "text": "Table: backend_bwgscrapprice\nColumns: id BIGINT, scrap_price DOUBLE, scrap_type_id BIGINT, client_id BIGINT\nPrimary keys: id\nForeign keys: ['scrap_type_id'] references backend_scraptype.['id']; ['client_id'] references backend_bwgclient.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "scrap_type_id"
+        ],
+        "referred_table": "backend_scraptype",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "client_id"
+        ],
+        "referred_table": "backend_bwgclient",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_completeorderlog",
+    "text": "Table: backend_completeorderlog\nColumns: id BIGINT, done_by VARCHAR(500), description LONGTEXT, created_at DATETIME, admin_id BIGINT, client_id BIGINT, order_id BIGINT, provider_id BIGINT, customer_id BIGINT\nPrimary keys: id\nForeign keys: ['admin_id'] references backend_adminuser.['id']; ['client_id'] references backend_bwgclient.['id']; ['customer_id'] references backend_customer.['id']; ['order_id'] references backend_completeorders.['id']; ['provider_id'] references backend_provider.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "admin_id"
+        ],
+        "referred_table": "backend_adminuser",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "client_id"
+        ],
+        "referred_table": "backend_bwgclient",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "customer_id"
+        ],
+        "referred_table": "backend_customer",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "order_id"
+        ],
+        "referred_table": "backend_completeorders",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "provider_id"
+        ],
+        "referred_table": "backend_provider",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_completeorders",
+    "text": "Table: backend_completeorders\nColumns: id BIGINT, schedule_date DATE, order_type VARCHAR(20), order_status VARCHAR(20), payment_method VARCHAR(20), is_selected TINYINT, billed_at DATETIME, is_deleted TINYINT, cancel_request TINYINT, biowaste_order_id BIGINT, bwg_order_id BIGINT, client_id BIGINT, district_id BIGINT, vehicle_id BIGINT, provider_id BIGINT, scrap_order_id BIGINT, state_id BIGINT, customer_id BIGINT, is_paid TINYINT, total_paid DOUBLE, paid_at DATETIME, order_id VARCHAR(255), cf_order_id VARCHAR(255), refund_id VARCHAR(255), refund_amount DOUBLE, remaining_refundable_amount DOUBLE, refund_charge DOUBLE, refund_mode VARCHAR(255), refund_status VARCHAR(255), refund_created_at DATETIME, refund_processed_at DATETIME, refundable TINYINT, partially_refunded TINYINT, fully_refunded TINYINT, order_amount DOUBLE, wallet_amount DOUBLE, real_amount DOUBLE, cf_order_status VARCHAR(255), payment_status VARCHAR(255), payment_processed_at DATETIME, gateway_fee DOUBLE, payin_items_excl DOUBLE, payout_items_excl DOUBLE, total_payin_amount_excl DOUBLE, total_payout_amount_excl DOUBLE, net_total_amount_excl DOUBLE, subsidy_amount DOUBLE, processing_charge DOUBLE, service_charge DOUBLE, roundoff_amount DOUBLE, total_payin_cgst_amount DOUBLE, total_payin_sgst_amount DOUBLE, total_payout_cgst_amount DOUBLE, total_payout_sgst_amount DOUBLE, total_cgst_amount DOUBLE, total_sgst_amount DOUBLE, total_payin_amount_incl DOUBLE, total_payout_amount_incl DOUBLE, net_total_amount_incl DOUBLE, before_wallet_d_c DOUBLE, total_wallet_debit DOUBLE, total_wallet_credit DOUBLE, after_wallet_d_c DOUBLE, total_pieces DOUBLE, total_kilos DOUBLE\nPrimary keys: id\nForeign keys: ['biowaste_order_id'] references backend_biowasteorders.['id']; ['bwg_order_id'] references backend_bwgorders.['id']; ['client_id'] references backend_bwgclient.['id']; ['customer_id'] references backend_customer.['id']; ['district_id'] references backend_district.['id']; ['provider_id'] references backend_provider.['id']; ['scrap_order_id'] references backend_scraporders.['id']; ['vehicle_id'] references backend_pickupvehicle.['id']; ['state_id'] references backend_state.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "biowaste_order_id"
+        ],
+        "referred_table": "backend_biowasteorders",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "bwg_order_id"
+        ],
+        "referred_table": "backend_bwgorders",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "client_id"
+        ],
+        "referred_table": "backend_bwgclient",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "customer_id"
+        ],
+        "referred_table": "backend_customer",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "district_id"
+        ],
+        "referred_table": "backend_district",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "provider_id"
+        ],
+        "referred_table": "backend_provider",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "scrap_order_id"
+        ],
+        "referred_table": "backend_scraporders",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "vehicle_id"
+        ],
+        "referred_table": "backend_pickupvehicle",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "state_id"
+        ],
+        "referred_table": "backend_state",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_country",
+    "text": "Table: backend_country\nColumns: id BIGINT, country_name VARCHAR(100), country_code VARCHAR(10), country_image VARCHAR(100), is_active TINYINT, is_deleted TINYINT\nPrimary keys: id\nForeign keys: ",
+    "foreign_keys": []
+  },
+  {
+    "table": "backend_customer",
+    "text": "Table: backend_customer\nColumns: id BIGINT, password VARCHAR(128), last_login DATETIME, is_superuser TINYINT, is_staff TINYINT, is_active TINYINT, date_joined DATETIME, full_name VARCHAR(50), otp VARCHAR(6), phone_number VARCHAR(100), email VARCHAR(254), user_type VARCHAR(20), platform VARCHAR(20), is_deleted TINYINT, district_id BIGINT, scrap_region_id BIGINT, state_id BIGINT, ward_id BIGINT, token_at DATETIME\nPrimary keys: id\nForeign keys: ['district_id'] references backend_district.['id']; ['scrap_region_id'] references backend_scrapregion.['id']; ['state_id'] references backend_state.['id']; ['ward_id'] references backend_ward.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "district_id"
+        ],
+        "referred_table": "backend_district",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "scrap_region_id"
+        ],
+        "referred_table": "backend_scrapregion",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "state_id"
+        ],
+        "referred_table": "backend_state",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "ward_id"
+        ],
+        "referred_table": "backend_ward",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_customer_groups",
+    "text": "Table: backend_customer_groups\nColumns: id BIGINT, customer_id BIGINT, group_id INTEGER\nPrimary keys: id\nForeign keys: ['customer_id'] references backend_customer.['id']; ['group_id'] references auth_group.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "customer_id"
+        ],
+        "referred_table": "backend_customer",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "group_id"
+        ],
+        "referred_table": "auth_group",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_customer_user_permissions",
+    "text": "Table: backend_customer_user_permissions\nColumns: id BIGINT, customer_id BIGINT, permission_id INTEGER\nPrimary keys: id\nForeign keys: ['customer_id'] references backend_customer.['id']; ['permission_id'] references auth_permission.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "customer_id"
+        ],
+        "referred_table": "backend_customer",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "permission_id"
+        ],
+        "referred_table": "auth_permission",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_customeraddress",
+    "text": "Table: backend_customeraddress\nColumns: id BIGINT, scrap_service TINYINT, scrap_location_active TINYINT, biowaste_service TINYINT, biowaste_location_active TINYINT, residence_type VARCHAR(20), residence_details VARCHAR(500), landmark VARCHAR(500), latitude VARCHAR(100), longitude VARCHAR(100), is_deleted TINYINT, scrap_region_id BIGINT, ward_id BIGINT, customer_id BIGINT\nPrimary keys: id\nForeign keys: ['customer_id'] references backend_customer.['id']; ['scrap_region_id'] references backend_scrapregion.['id']; ['ward_id'] references backend_ward.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "customer_id"
+        ],
+        "referred_table": "backend_customer",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "scrap_region_id"
+        ],
+        "referred_table": "backend_scrapregion",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "ward_id"
+        ],
+        "referred_table": "backend_ward",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_customerdonation",
+    "text": "Table: backend_customerdonation\nColumns: id BIGINT, donation_date DATETIME, donation_amount DOUBLE, customer_id BIGINT\nPrimary keys: id\nForeign keys: ['customer_id'] references backend_customer.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "customer_id"
+        ],
+        "referred_table": "backend_customer",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_customerenquiry",
+    "text": "Table: backend_customerenquiry\nColumns: id BIGINT, source VARCHAR(100), cust_name VARCHAR(100), cust_email VARCHAR(254), phone_number VARCHAR(15), subject VARCHAR(100), message LONGTEXT, created_at DATETIME, is_active TINYINT\nPrimary keys: id\nForeign keys: ",
+    "foreign_keys": []
+  },
+  {
+    "table": "backend_customerinactivelocations",
+    "text": "Table: backend_customerinactivelocations\nColumns: id BIGINT, latitude DOUBLE, longitude DOUBLE, is_scrap TINYINT, is_bio TINYINT, created_at DATETIME, customer_id BIGINT\nPrimary keys: id\nForeign keys: ['customer_id'] references backend_customer.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "customer_id"
+        ],
+        "referred_table": "backend_customer",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_customerloyaltypoint",
+    "text": "Table: backend_customerloyaltypoint\nColumns: id BIGINT, points DOUBLE, customer_id BIGINT\nPrimary keys: id\nForeign keys: ['customer_id'] references backend_customer.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "customer_id"
+        ],
+        "referred_table": "backend_customer",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_customerorderanalytics",
+    "text": "Table: backend_customerorderanalytics\nColumns: id BIGINT, date DATE, scrap_revenue DOUBLE, bio_revenue DOUBLE, scrap_weight DOUBLE, bio_weight DOUBLE, district_id BIGINT, localbody_id BIGINT, scrap_region_id BIGINT, state_id BIGINT, ward_id BIGINT, customer_id BIGINT, client_id BIGINT\nPrimary keys: id\nForeign keys: ['client_id'] references backend_bwgclient.['id']; ['district_id'] references backend_district.['id']; ['localbody_id'] references backend_localbody.['id']; ['scrap_region_id'] references backend_scrapregion.['id']; ['state_id'] references backend_state.['id']; ['ward_id'] references backend_ward.['id']; ['customer_id'] references backend_customer.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "client_id"
+        ],
+        "referred_table": "backend_bwgclient",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "district_id"
+        ],
+        "referred_table": "backend_district",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "localbody_id"
+        ],
+        "referred_table": "backend_localbody",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "scrap_region_id"
+        ],
+        "referred_table": "backend_scrapregion",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "state_id"
+        ],
+        "referred_table": "backend_state",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "ward_id"
+        ],
+        "referred_table": "backend_ward",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "customer_id"
+        ],
+        "referred_table": "backend_customer",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_customerpaymentmethods",
+    "text": "Table: backend_customerpaymentmethods\nColumns: id BIGINT, beneficiary VARCHAR(100), account_number VARCHAR(100), ifsc VARCHAR(100), upi VARCHAR(100), phone_number VARCHAR(100), email VARCHAR(100), transaction_mode VARCHAR(100), is_verified TINYINT, customer_id BIGINT, client_id BIGINT, is_active TINYINT, beneficiary_id VARCHAR(255), beneficiary_status VARCHAR(255), is_deleted TINYINT, address_line VARCHAR(255), address_city VARCHAR(255), address_state VARCHAR(255), address_zip VARCHAR(255)\nPrimary keys: id\nForeign keys: ['client_id'] references backend_bwgclient.['id']; ['customer_id'] references backend_customer.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "client_id"
+        ],
+        "referred_table": "backend_bwgclient",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "customer_id"
+        ],
+        "referred_table": "backend_customer",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_customerphonenumberchange",
+    "text": "Table: backend_customerphonenumberchange\nColumns: id BIGINT, phone_number VARCHAR(15), otp VARCHAR(10)\nPrimary keys: id\nForeign keys: ",
+    "foreign_keys": []
+  },
+  {
+    "table": "backend_customerscrapmoney",
+    "text": "Table: backend_customerscrapmoney\nColumns: id BIGINT, scrap_money DOUBLE, customer_id BIGINT, client_id BIGINT\nPrimary keys: id\nForeign keys: ['client_id'] references backend_bwgclient.['id']; ['customer_id'] references backend_customer.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "client_id"
+        ],
+        "referred_table": "backend_bwgclient",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "customer_id"
+        ],
+        "referred_table": "backend_customer",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_customertermsandconditions",
+    "text": "Table: backend_customertermsandconditions\nColumns: id BIGINT, optional TINYINT, signed_date DATETIME, customer_id BIGINT\nPrimary keys: id\nForeign keys: ['customer_id'] references backend_customer.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "customer_id"
+        ],
+        "referred_table": "backend_customer",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_customerwallet",
+    "text": "Table: backend_customerwallet\nColumns: id BIGINT, balance DOUBLE, customer_id BIGINT\nPrimary keys: id\nForeign keys: ['customer_id'] references backend_customer.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "customer_id"
+        ],
+        "referred_table": "backend_customer",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_district",
+    "text": "Table: backend_district\nColumns: id BIGINT, district_name VARCHAR(100), district_code VARCHAR(5), is_active TINYINT, is_deleted TINYINT, state_id BIGINT\nPrimary keys: id\nForeign keys: ['state_id'] references backend_state.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "state_id"
+        ],
+        "referred_table": "backend_state",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_droppedorder",
+    "text": "Table: backend_droppedorder\nColumns: id BIGINT, other_reason LONGTEXT, drop_date DATETIME, order_id BIGINT, reason_id BIGINT\nPrimary keys: id\nForeign keys: ['order_id'] references backend_completeorders.['id']; ['reason_id'] references backend_orderdropreason.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "order_id"
+        ],
+        "referred_table": "backend_completeorders",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "reason_id"
+        ],
+        "referred_table": "backend_orderdropreason",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_employeeinfo",
+    "text": "Table: backend_employeeinfo\nColumns: id BIGINT, employee_id VARCHAR(20), full_name VARCHAR(100), phone_number VARCHAR(15), email VARCHAR(254), dob DATE, photo VARCHAR(100), gender VARCHAR(20), aadhar_number VARCHAR(12), address LONGTEXT, designation VARCHAR(100), date_of_joining DATE, date_of_leaving DATE, bank_name VARCHAR(100), account_number VARCHAR(50), ifsc_code VARCHAR(20), district_id BIGINT, state_id BIGINT\nPrimary keys: id\nForeign keys: ['district_id'] references backend_district.['id']; ['state_id'] references backend_state.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "district_id"
+        ],
+        "referred_table": "backend_district",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "state_id"
+        ],
+        "referred_table": "backend_state",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_firebasetoken",
+    "text": "Table: backend_firebasetoken\nColumns: id BIGINT, token LONGTEXT, customer_id BIGINT\nPrimary keys: id\nForeign keys: ['customer_id'] references backend_customer.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "customer_id"
+        ],
+        "referred_table": "backend_customer",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_frequentlyaskedquestions",
+    "text": "Table: backend_frequentlyaskedquestions\nColumns: id BIGINT, title VARCHAR(50), question LONGTEXT, answer LONGTEXT, is_active TINYINT\nPrimary keys: id\nForeign keys: ",
+    "foreign_keys": []
+  },
+  {
+    "table": "backend_greenpointcoupon",
+    "text": "Table: backend_greenpointcoupon\nColumns: id BIGINT, coupon_code VARCHAR(100), coupon_value INTEGER, created_at DATETIME, expiry_date DATE, is_active TINYINT, offer_id BIGINT, customer_id BIGINT\nPrimary keys: id\nForeign keys: ['customer_id'] references backend_customer.['id']; ['offer_id'] references backend_greenpointoffers.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "customer_id"
+        ],
+        "referred_table": "backend_customer",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "offer_id"
+        ],
+        "referred_table": "backend_greenpointoffers",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_greenpointoffers",
+    "text": "Table: backend_greenpointoffers\nColumns: id BIGINT, company VARCHAR(100), company_code VARCHAR(100), offer_percentage LONGTEXT, offer_description LONGTEXT, offer_image VARCHAR(100), min_offer_points INTEGER, created_at DATETIME, expiry_day INTEGER, is_active TINYINT\nPrimary keys: id\nForeign keys: ",
+    "foreign_keys": []
+  },
+  {
+    "table": "backend_greenpointsoffersstate",
+    "text": "Table: backend_greenpointsoffersstate\nColumns: id BIGINT, offer_id BIGINT, state_id BIGINT\nPrimary keys: id\nForeign keys: ['offer_id'] references backend_greenpointoffers.['id']; ['state_id'] references backend_state.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "offer_id"
+        ],
+        "referred_table": "backend_greenpointoffers",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "state_id"
+        ],
+        "referred_table": "backend_state",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_localbody",
+    "text": "Table: backend_localbody\nColumns: id BIGINT, localbody_name VARCHAR(100), border_polygon LONGTEXT, bio_processing_charge DOUBLE, bio_service_charge DOUBLE, bio_subsidy_amount DOUBLE, bio_cgst_percentage DOUBLE, bio_sgst_percentage DOUBLE, bio_residential_price DOUBLE, bio_commercial_price DOUBLE, is_active TINYINT, is_deleted TINYINT, district_id BIGINT, localbody_type_id BIGINT, is_inclusive_commercial TINYINT, is_inclusive_residential TINYINT, geometry NULL\nPrimary keys: id\nForeign keys: ['district_id'] references backend_district.['id']; ['localbody_type_id'] references backend_localbodytype.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "district_id"
+        ],
+        "referred_table": "backend_district",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "localbody_type_id"
+        ],
+        "referred_table": "backend_localbodytype",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_localbodylimit",
+    "text": "Table: backend_localbodylimit\nColumns: id BIGINT, available_date DATE, limit INTEGER, remaining_slots INTEGER, localbody_id BIGINT\nPrimary keys: id\nForeign keys: ['localbody_id'] references backend_localbody.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "localbody_id"
+        ],
+        "referred_table": "backend_localbody",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_localbodytype",
+    "text": "Table: backend_localbodytype\nColumns: id BIGINT, localbody_type VARCHAR(100), is_active TINYINT, is_deleted TINYINT\nPrimary keys: id\nForeign keys: ",
+    "foreign_keys": []
+  },
+  {
+    "table": "backend_locationaccuracy",
+    "text": "Table: backend_locationaccuracy\nColumns: id BIGINT, accuracy TINYINT\nPrimary keys: id\nForeign keys: ",
+    "foreign_keys": []
+  },
+  {
+    "table": "backend_logistic_partner",
+    "text": "Table: backend_logistic_partner\nColumns: id BIGINT, agency_name VARCHAR(100), created_on DATETIME, email VARCHAR(254), is_active BIT, is_deleted BIT, phone_number VARCHAR(100), municipal_corportion_id BIGINT\nPrimary keys: id\nForeign keys: ['municipal_corportion_id'] references backend_muncipal_corporation.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "municipal_corportion_id"
+        ],
+        "referred_table": "backend_muncipal_corporation",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_loyaltypointtransactions",
+    "text": "Table: backend_loyaltypointtransactions\nColumns: id BIGINT, transaction_type VARCHAR(10), transaction_date DATETIME, transaction_point DOUBLE, transaction_mode VARCHAR(20), point_balance DOUBLE, done_by VARCHAR(100), customer_id BIGINT\nPrimary keys: id\nForeign keys: ['customer_id'] references backend_customer.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "customer_id"
+        ],
+        "referred_table": "backend_customer",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_lsgduser",
+    "text": "Table: backend_lsgduser\nColumns: id BIGINT, password VARCHAR(128), last_login DATETIME, is_superuser TINYINT, is_staff TINYINT, date_joined DATETIME, username VARCHAR(250), lsgd_type VARCHAR(100), plain_password VARCHAR(20), is_active TINYINT, is_deleted TINYINT, email VARCHAR(254), lsgd_role_id BIGINT\nPrimary keys: id\nForeign keys: ['lsgd_role_id'] references backend_adminrole.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "lsgd_role_id"
+        ],
+        "referred_table": "backend_adminrole",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_lsgduser_groups",
+    "text": "Table: backend_lsgduser_groups\nColumns: id BIGINT, lsgduser_id BIGINT, group_id INTEGER\nPrimary keys: id\nForeign keys: ['lsgduser_id'] references backend_lsgduser.['id']; ['group_id'] references auth_group.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "lsgduser_id"
+        ],
+        "referred_table": "backend_lsgduser",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "group_id"
+        ],
+        "referred_table": "auth_group",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_lsgduser_user_permissions",
+    "text": "Table: backend_lsgduser_user_permissions\nColumns: id BIGINT, lsgduser_id BIGINT, permission_id INTEGER\nPrimary keys: id\nForeign keys: ['lsgduser_id'] references backend_lsgduser.['id']; ['permission_id'] references auth_permission.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "lsgduser_id"
+        ],
+        "referred_table": "backend_lsgduser",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "permission_id"
+        ],
+        "referred_table": "auth_permission",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_muncipal_corporation",
+    "text": "Table: backend_muncipal_corporation\nColumns: id BIGINT, border_coordinates LONGTEXT, code VARCHAR(50), corporation_name VARCHAR(100), created_on DATETIME, geometry NULL, is_active BIT, is_deleted BIT, district_id BIGINT, state_id BIGINT\nPrimary keys: id\nForeign keys: ['state_id'] references backend_state.['id']; ['district_id'] references backend_district.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "state_id"
+        ],
+        "referred_table": "backend_state",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "district_id"
+        ],
+        "referred_table": "backend_district",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_offersandcoupons",
+    "text": "Table: backend_offersandcoupons\nColumns: id BIGINT, coupon_id VARCHAR(20), title LONGTEXT, description LONGTEXT, discount VARCHAR(1000), coupon_code VARCHAR(1000), plain_link VARCHAR(1000), affiliate_link VARCHAR(1000), merchant_id VARCHAR(50), merchant_name VARCHAR(100), merchant_logo VARCHAR(1000), created_at DATETIME, is_active TINYINT\nPrimary keys: id\nForeign keys: ",
+    "foreign_keys": []
+  },
+  {
+    "table": "backend_ordercancelreason",
+    "text": "Table: backend_ordercancelreason\nColumns: id BIGINT, reason LONGTEXT, order_type VARCHAR(10), is_active TINYINT, is_customer TINYINT, is_provider TINYINT\nPrimary keys: id\nForeign keys: ",
+    "foreign_keys": []
+  },
+  {
+    "table": "backend_orderdropreason",
+    "text": "Table: backend_orderdropreason\nColumns: id BIGINT, reason LONGTEXT, is_active TINYINT\nPrimary keys: id\nForeign keys: ",
+    "foreign_keys": []
+  },
+  {
+    "table": "backend_orderusedbag",
+    "text": "Table: backend_orderusedbag\nColumns: id BIGINT, number_of_bags INTEGER, total_bag_price DOUBLE, cgst_price DECIMAL(10, 2), sgst_price DECIMAL(10, 2), final_price DOUBLE, bag_date DATETIME, is_deleted TINYINT, order_id BIGINT, bag_id BIGINT\nPrimary keys: id\nForeign keys: ['bag_id'] references backend_wastebag.['id']; ['order_id'] references backend_completeorders.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "bag_id"
+        ],
+        "referred_table": "backend_wastebag",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "order_id"
+        ],
+        "referred_table": "backend_completeorders",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_ordervisibility",
+    "text": "Table: backend_ordervisibility\nColumns: id BIGINT, start_time TIME, end_time TIME, district_id BIGINT\nPrimary keys: id\nForeign keys: ['district_id'] references backend_district.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "district_id"
+        ],
+        "referred_table": "backend_district",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_perdaycustomerscrapmoneytransaction",
+    "text": "Table: backend_perdaycustomerscrapmoneytransaction\nColumns: id BIGINT, transaction_date DATE, customer_id BIGINT\nPrimary keys: id\nForeign keys: ['customer_id'] references backend_customer.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "customer_id"
+        ],
+        "referred_table": "backend_customer",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_perdayordercount",
+    "text": "Table: backend_perdayordercount\nColumns: id BIGINT, order_date DATE, bio_count_open INTEGER, scrap_count_open INTEGER, bio_count_pending INTEGER, scrap_count_pending INTEGER\nPrimary keys: id\nForeign keys: ",
+    "foreign_keys": []
+  },
+  {
+    "table": "backend_pickupvehicle",
+    "text": "Table: backend_pickupvehicle\nColumns: id BIGINT, vehicle_name VARCHAR(100), vehicle_number VARCHAR(20), pickup_type VARCHAR(20), created_on DATETIME, vehicle_image VARCHAR(100), is_assigned TINYINT, is_active TINYINT, is_deleted TINYINT, state_id BIGINT\nPrimary keys: id\nForeign keys: ['state_id'] references backend_state.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "state_id"
+        ],
+        "referred_table": "backend_state",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_pickupvehicledistrict",
+    "text": "Table: backend_pickupvehicledistrict\nColumns: id BIGINT, is_active TINYINT, district_id BIGINT, vehicle_id BIGINT\nPrimary keys: id\nForeign keys: ['district_id'] references backend_district.['id']; ['vehicle_id'] references backend_pickupvehicle.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "district_id"
+        ],
+        "referred_table": "backend_district",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "vehicle_id"
+        ],
+        "referred_table": "backend_pickupvehicle",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_previousdayorders",
+    "text": "Table: backend_previousdayorders\nColumns: id BIGINT, date DATE, scrap_pending_order_count INTEGER, bio_pending_order_count INTEGER, scrap_scheduled_order_count INTEGER, bio_scheduled_order_count INTEGER, district_id BIGINT\nPrimary keys: id\nForeign keys: ['district_id'] references backend_district.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "district_id"
+        ],
+        "referred_table": "backend_district",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_provider",
+    "text": "Table: backend_provider\nColumns: id BIGINT, password VARCHAR(128), last_login DATETIME, is_superuser TINYINT, is_staff TINYINT, provider_code VARCHAR(20), full_name VARCHAR(50), phone_number VARCHAR(20), email VARCHAR(254), gender VARCHAR(20), date_of_birth DATE, date_joined DATETIME, id_type VARCHAR(20), id_number VARCHAR(20), address LONGTEXT, pincode VARCHAR(6), scrap_pickup TINYINT, biowaste_pickup TINYINT, bwg_bio_pickup TINYINT, bwg_scrap_pickup TINYINT, order_pickup_limit INTEGER, active_order_count INTEGER, profile_pic VARCHAR(100), document VARCHAR(100), scrap_cash_in_hand DOUBLE, bio_cash_in_hand DOUBLE, bwg_scrap_cash_in_hand DOUBLE, bwg_bio_cash_in_hand DOUBLE, total_cash_in_hand DOUBLE, logout TINYINT, is_cash_allowed TINYINT, is_active TINYINT, is_deleted TINYINT, role_id BIGINT, state_id BIGINT, token_at DATETIME\nPrimary keys: id\nForeign keys: ['role_id'] references backend_providerroles.['id']; ['state_id'] references backend_state.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "role_id"
+        ],
+        "referred_table": "backend_providerroles",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "state_id"
+        ],
+        "referred_table": "backend_state",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_provider_code_sequence",
+    "text": "Table: backend_provider_code_sequence\nColumns: id BIGINT, state_code VARCHAR(10), last_number INTEGER\nPrimary keys: id\nForeign keys: ",
+    "foreign_keys": []
+  },
+  {
+    "table": "backend_provider_groups",
+    "text": "Table: backend_provider_groups\nColumns: id BIGINT, provider_id BIGINT, group_id INTEGER\nPrimary keys: id\nForeign keys: ['provider_id'] references backend_provider.['id']; ['group_id'] references auth_group.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "provider_id"
+        ],
+        "referred_table": "backend_provider",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "group_id"
+        ],
+        "referred_table": "auth_group",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_provider_user_permissions",
+    "text": "Table: backend_provider_user_permissions\nColumns: id BIGINT, provider_id BIGINT, permission_id INTEGER\nPrimary keys: id\nForeign keys: ['permission_id'] references auth_permission.['id']; ['provider_id'] references backend_provider.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "permission_id"
+        ],
+        "referred_table": "auth_permission",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "provider_id"
+        ],
+        "referred_table": "backend_provider",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_provideraddorderlimit",
+    "text": "Table: backend_provideraddorderlimit\nColumns: id BIGINT, max_limit INTEGER, current_limit INTEGER, provider_id BIGINT\nPrimary keys: id\nForeign keys: ['provider_id'] references backend_provider.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "provider_id"
+        ],
+        "referred_table": "backend_provider",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_providerauthentication",
+    "text": "Table: backend_providerauthentication\nColumns: id BIGINT, otp VARCHAR(6), provider_id BIGINT\nPrimary keys: id\nForeign keys: ['provider_id'] references backend_provider.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "provider_id"
+        ],
+        "referred_table": "backend_provider",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_providercashcollection",
+    "text": "Table: backend_providercashcollection\nColumns: id BIGINT, transaction_type VARCHAR(20), transaction_mode VARCHAR(20), transaction_amount DOUBLE, balance DOUBLE, reason VARCHAR(20), other_reason LONGTEXT, transaction_date DATETIME, done_by VARCHAR(100), client_id BIGINT, order_id BIGINT, provider_id BIGINT, vehicle_id BIGINT, customer_id BIGINT\nPrimary keys: id\nForeign keys: ['client_id'] references backend_bwgclient.['id']; ['customer_id'] references backend_customer.['id']; ['order_id'] references backend_completeorders.['id']; ['provider_id'] references backend_provider.['id']; ['vehicle_id'] references backend_pickupvehicle.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "client_id"
+        ],
+        "referred_table": "backend_bwgclient",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "customer_id"
+        ],
+        "referred_table": "backend_customer",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "order_id"
+        ],
+        "referred_table": "backend_completeorders",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "provider_id"
+        ],
+        "referred_table": "backend_provider",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "vehicle_id"
+        ],
+        "referred_table": "backend_pickupvehicle",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_providercashcollectionlog",
+    "text": "Table: backend_providercashcollectionlog\nColumns: id BIGINT, operation VARCHAR(10), old_transaction_mode VARCHAR(10), new_transaction_mode VARCHAR(10), transaction_amount DOUBLE, old_balance DOUBLE, new_balance DOUBLE, change_date DATETIME, cash_collection_id BIGINT, done_by_id BIGINT\nPrimary keys: id\nForeign keys: ['cash_collection_id'] references backend_providercashcollection.['id']; ['done_by_id'] references backend_provider.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "cash_collection_id"
+        ],
+        "referred_table": "backend_providercashcollection",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "done_by_id"
+        ],
+        "referred_table": "backend_provider",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_providercashlimit",
+    "text": "Table: backend_providercashlimit\nColumns: id BIGINT, cash_limit DOUBLE, provider_id BIGINT\nPrimary keys: id\nForeign keys: ['provider_id'] references backend_provider.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "provider_id"
+        ],
+        "referred_table": "backend_provider",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_providerdevice",
+    "text": "Table: backend_providerdevice\nColumns: id BIGINT, device_id VARCHAR(100), provider_id BIGINT\nPrimary keys: id\nForeign keys: ['provider_id'] references backend_provider.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "provider_id"
+        ],
+        "referred_table": "backend_provider",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_providerdistrict",
+    "text": "Table: backend_providerdistrict\nColumns: id BIGINT, scrap_allowed TINYINT, bio_allowed TINYINT, is_active TINYINT, district_id BIGINT, provider_id BIGINT\nPrimary keys: id\nForeign keys: ['district_id'] references backend_district.['id']; ['provider_id'] references backend_provider.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "district_id"
+        ],
+        "referred_table": "backend_district",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "provider_id"
+        ],
+        "referred_table": "backend_provider",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_providerlocalbody",
+    "text": "Table: backend_providerlocalbody\nColumns: id BIGINT, is_active TINYINT, localbody_id BIGINT, provider_id BIGINT\nPrimary keys: id\nForeign keys: ['localbody_id'] references backend_localbody.['id']; ['provider_id'] references backend_provider.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "localbody_id"
+        ],
+        "referred_table": "backend_localbody",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "provider_id"
+        ],
+        "referred_table": "backend_provider",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_providerlocationtrack",
+    "text": "Table: backend_providerlocationtrack\nColumns: id BIGINT, latitude DOUBLE, longitude DOUBLE, loc_time DATETIME, unique_id VARCHAR(100), device_model VARCHAR(100), provider_id BIGINT, battery_level VARCHAR(100), carrier VARCHAR(100), device_brand VARCHAR(100), device_manufacturer VARCHAR(100), device_type VARCHAR(100), ip_address VARCHAR(100), device_id VARCHAR(100)\nPrimary keys: id\nForeign keys: ['provider_id'] references backend_provider.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "provider_id"
+        ],
+        "referred_table": "backend_provider",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_providerpickupweightlimit",
+    "text": "Table: backend_providerpickupweightlimit\nColumns: id BIGINT, weight_limit DOUBLE, provider_id BIGINT\nPrimary keys: id\nForeign keys: ['provider_id'] references backend_provider.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "provider_id"
+        ],
+        "referred_table": "backend_provider",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_providerroles",
+    "text": "Table: backend_providerroles\nColumns: id BIGINT, role_name VARCHAR(100), is_admin TINYINT, is_active TINYINT\nPrimary keys: id\nForeign keys: ",
+    "foreign_keys": []
+  },
+  {
+    "table": "backend_providerscrapregion",
+    "text": "Table: backend_providerscrapregion\nColumns: id BIGINT, is_active TINYINT, provider_id BIGINT, scrap_region_id BIGINT\nPrimary keys: id\nForeign keys: ['provider_id'] references backend_provider.['id']; ['scrap_region_id'] references backend_scrapregion.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "provider_id"
+        ],
+        "referred_table": "backend_provider",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "scrap_region_id"
+        ],
+        "referred_table": "backend_scrapregion",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_providerservicelocationflag",
+    "text": "Table: backend_providerservicelocationflag\nColumns: id BIGINT, all_scrap_district TINYINT, all_bio_district TINYINT, all_scrap_regions TINYINT, all_localbodies TINYINT, all_wards TINYINT, provider_id BIGINT\nPrimary keys: id\nForeign keys: ['provider_id'] references backend_provider.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "provider_id"
+        ],
+        "referred_table": "backend_provider",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_providerteam",
+    "text": "Table: backend_providerteam\nColumns: id BIGINT, team_name VARCHAR(100), is_active TINYINT, is_deleted TINYINT, created_at DATETIME\nPrimary keys: id\nForeign keys: ",
+    "foreign_keys": []
+  },
+  {
+    "table": "backend_providerteamallotedwards",
+    "text": "Table: backend_providerteamallotedwards\nColumns: id BIGINT, monday TINYINT, tuesday TINYINT, wednesday TINYINT, thursday TINYINT, friday TINYINT, saturday TINYINT, sunday TINYINT, created_at DATETIME, team_id BIGINT, ward_id BIGINT\nPrimary keys: id\nForeign keys: ['team_id'] references backend_providerteam.['id']; ['ward_id'] references backend_ward.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "team_id"
+        ],
+        "referred_table": "backend_providerteam",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "ward_id"
+        ],
+        "referred_table": "backend_ward",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_providerteammember",
+    "text": "Table: backend_providerteammember\nColumns: id BIGINT, created_at DATETIME, provider_id BIGINT, team_id BIGINT\nPrimary keys: id\nForeign keys: ['provider_id'] references backend_provider.['id']; ['team_id'] references backend_providerteam.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "provider_id"
+        ],
+        "referred_table": "backend_provider",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "team_id"
+        ],
+        "referred_table": "backend_providerteam",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_providerversioncode",
+    "text": "Table: backend_providerversioncode\nColumns: id BIGINT, version_code VARCHAR(20), created_at DATETIME, provider_id BIGINT\nPrimary keys: id\nForeign keys: ['provider_id'] references backend_provider.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "provider_id"
+        ],
+        "referred_table": "backend_provider",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_providerward",
+    "text": "Table: backend_providerward\nColumns: id BIGINT, is_active TINYINT, provider_id BIGINT, ward_id BIGINT\nPrimary keys: id\nForeign keys: ['provider_id'] references backend_provider.['id']; ['ward_id'] references backend_ward.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "provider_id"
+        ],
+        "referred_table": "backend_provider",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "ward_id"
+        ],
+        "referred_table": "backend_ward",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_razorpaycreds",
+    "text": "Table: backend_razorpaycreds\nColumns: id BIGINT, key_id VARCHAR(100), is_kerala TINYINT\nPrimary keys: id\nForeign keys: ",
+    "foreign_keys": []
+  },
+  {
+    "table": "backend_revenueanalytics",
+    "text": "Table: backend_revenueanalytics\nColumns: id BIGINT, date DATE, scrap_revenue_positive DOUBLE, scrap_revenue_negative DOUBLE, scrap_order_count INTEGER, bio_revenue DOUBLE, bio_order_count INTEGER, district_id BIGINT, localbody_id BIGINT, scrap_region_id BIGINT, state_id BIGINT, ward_id BIGINT\nPrimary keys: id\nForeign keys: ['district_id'] references backend_district.['id']; ['localbody_id'] references backend_localbody.['id']; ['scrap_region_id'] references backend_scrapregion.['id']; ['state_id'] references backend_state.['id']; ['ward_id'] references backend_ward.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "district_id"
+        ],
+        "referred_table": "backend_district",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "localbody_id"
+        ],
+        "referred_table": "backend_localbody",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "scrap_region_id"
+        ],
+        "referred_table": "backend_scrapregion",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "state_id"
+        ],
+        "referred_table": "backend_state",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "ward_id"
+        ],
+        "referred_table": "backend_ward",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_scrapcategory",
+    "text": "Table: backend_scrapcategory\nColumns: id BIGINT, category_name VARCHAR(100), subcategory_name VARCHAR(10), image VARCHAR(100), is_active TINYINT, hsn_code VARCHAR(10)\nPrimary keys: id\nForeign keys: ",
+    "foreign_keys": []
+  },
+  {
+    "table": "backend_scrapmoneytransactions",
+    "text": "Table: backend_scrapmoneytransactions\nColumns: id BIGINT, transaction_amount DOUBLE, verification_fee DOUBLE, verification_fee_tax DOUBLE, transaction_fee DOUBLE, transaction_fee_tax DOUBLE, final_amount DOUBLE, scrap_money_balance DOUBLE, transaction_type VARCHAR(100), transaction_reason VARCHAR(100), done_by VARCHAR(250), request_status VARCHAR(100), transaction_utr VARCHAR(250), fail_reason LONGTEXT, request_date DATETIME, transaction_date DATETIME, payment_method_id BIGINT, customer_id BIGINT, payout_type VARCHAR(100), client_id BIGINT, reference_id VARCHAR(255), fund_account_id VARCHAR(255), contact_id VARCHAR(255), transfer_id VARCHAR(255), processed_at DATETIME\nPrimary keys: id\nForeign keys: ['client_id'] references backend_bwgclient.['id']; ['customer_id'] references backend_customer.['id']; ['payment_method_id'] references backend_customerpaymentmethods.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "client_id"
+        ],
+        "referred_table": "backend_bwgclient",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "customer_id"
+        ],
+        "referred_table": "backend_customer",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "payment_method_id"
+        ],
+        "referred_table": "backend_customerpaymentmethods",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_scrapordercart",
+    "text": "Table: backend_scrapordercart\nColumns: id BIGINT, scrap_weight DOUBLE, scrap_price DOUBLE, total_price DOUBLE, is_deleted TINYINT, scrap_order_id BIGINT, scrap_type_id BIGINT, captured_weight DOUBLE, is_payable TINYINT, is_kg TINYINT, captured_price DOUBLE, cgst_rate DOUBLE, sgst_rate DOUBLE, cgst_charges DOUBLE, sgst_charges DOUBLE, taxable_amount DOUBLE, total_amount_incl DOUBLE\nPrimary keys: id\nForeign keys: ['scrap_order_id'] references backend_scraporders.['id']; ['scrap_type_id'] references backend_scraptype.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "scrap_order_id"
+        ],
+        "referred_table": "backend_scraporders",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "scrap_type_id"
+        ],
+        "referred_table": "backend_scraptype",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_scraporders",
+    "text": "Table: backend_scraporders\nColumns: id BIGINT, order_code VARCHAR(50), order_date DATETIME, schedule_date DATE, alternate_number VARCHAR(20), bill_type VARCHAR(20), prefered_payment_method VARCHAR(20), comment LONGTEXT, order_rating DOUBLE, order_status VARCHAR(20), platform VARCHAR(20), is_deleted TINYINT, address_id BIGINT, reason_id BIGINT, scrap_region_id BIGINT, state_id BIGINT, customer_id BIGINT, order_age INTEGER\nPrimary keys: id\nForeign keys: ['address_id'] references backend_customeraddress.['id']; ['customer_id'] references backend_customer.['id']; ['reason_id'] references backend_ordercancelreason.['id']; ['scrap_region_id'] references backend_scrapregion.['id']; ['state_id'] references backend_state.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "address_id"
+        ],
+        "referred_table": "backend_customeraddress",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "customer_id"
+        ],
+        "referred_table": "backend_customer",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "reason_id"
+        ],
+        "referred_table": "backend_ordercancelreason",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "scrap_region_id"
+        ],
+        "referred_table": "backend_scrapregion",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "state_id"
+        ],
+        "referred_table": "backend_state",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_scrapregion",
+    "text": "Table: backend_scrapregion\nColumns: id BIGINT, region_name VARCHAR(100), border_polygon LONGTEXT, region_weekday_current JSON, region_weekday_next JSON, is_active TINYINT, is_deleted TINYINT, district_id BIGINT, geometry NULL\nPrimary keys: id\nForeign keys: ['district_id'] references backend_district.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "district_id"
+        ],
+        "referred_table": "backend_district",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_scrapregionavailability",
+    "text": "Table: backend_scrapregionavailability\nColumns: id BIGINT, available_date DATE, limit INTEGER, remaining_slots INTEGER, scrap_region_id BIGINT\nPrimary keys: id\nForeign keys: ['scrap_region_id'] references backend_scrapregion.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "scrap_region_id"
+        ],
+        "referred_table": "backend_scrapregion",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_scrapstock",
+    "text": "Table: backend_scrapstock\nColumns: id BIGINT, rate DOUBLE, stock_at DATE, quantity DOUBLE, is_manual TINYINT, created_at DATETIME, district_id BIGINT, scrap_type_id BIGINT\nPrimary keys: id\nForeign keys: ['district_id'] references backend_district.['id']; ['scrap_type_id'] references backend_scraptype.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "district_id"
+        ],
+        "referred_table": "backend_district",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "scrap_type_id"
+        ],
+        "referred_table": "backend_scraptype",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_scraptype",
+    "text": "Table: backend_scraptype\nColumns: id BIGINT, scrap_name VARCHAR(100), image VARCHAR(100), is_payable TINYINT, is_kg TINYINT, is_active TINYINT, scrap_category_id BIGINT\nPrimary keys: id\nForeign keys: ['scrap_category_id'] references backend_scrapcategory.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "scrap_category_id"
+        ],
+        "referred_table": "backend_scrapcategory",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_scraptypeanalytics",
+    "text": "Table: backend_scraptypeanalytics\nColumns: id BIGINT, date DATE, total_weight DOUBLE, total_price DOUBLE, order_count INTEGER, district_id BIGINT, scrap_type_id BIGINT, state_id BIGINT\nPrimary keys: id\nForeign keys: ['district_id'] references backend_district.['id']; ['scrap_type_id'] references backend_scraptype.['id']; ['state_id'] references backend_state.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "district_id"
+        ],
+        "referred_table": "backend_district",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "scrap_type_id"
+        ],
+        "referred_table": "backend_scraptype",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "state_id"
+        ],
+        "referred_table": "backend_state",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_scraptypelocationandprice",
+    "text": "Table: backend_scraptypelocationandprice\nColumns: id BIGINT, scrap_price DOUBLE, is_active TINYINT, district_id BIGINT, scrap_type_id BIGINT, scrap_cgst DOUBLE, scrap_sgst DOUBLE\nPrimary keys: id\nForeign keys: ['district_id'] references backend_district.['id']; ['scrap_type_id'] references backend_scraptype.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "district_id"
+        ],
+        "referred_table": "backend_district",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "scrap_type_id"
+        ],
+        "referred_table": "backend_scraptype",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_servicecategory",
+    "text": "Table: backend_servicecategory\nColumns: id BIGINT, service_name VARCHAR(100), service_title LONGTEXT, service_subtitle LONGTEXT, icon VARCHAR(100), is_active TINYINT, is_disabled TINYINT, url VARCHAR(255), category_url VARCHAR(255), order_url VARCHAR(255), schedule_url VARCHAR(255)\nPrimary keys: id\nForeign keys: ",
+    "foreign_keys": []
+  },
+  {
+    "table": "backend_state",
+    "text": "Table: backend_state\nColumns: id BIGINT, state_image VARCHAR(100), state_name VARCHAR(100), state_code VARCHAR(100), is_active TINYINT, is_deleted TINYINT, country_id BIGINT\nPrimary keys: id\nForeign keys: ['country_id'] references backend_country.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "country_id"
+        ],
+        "referred_table": "backend_country",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_stockcategory",
+    "text": "Table: backend_stockcategory\nColumns: id BIGINT, name VARCHAR(50), district_id BIGINT\nPrimary keys: id\nForeign keys: ['district_id'] references backend_district.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "district_id"
+        ],
+        "referred_table": "backend_district",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_stockcategory_scraps",
+    "text": "Table: backend_stockcategory_scraps\nColumns: id BIGINT, stockcategory_id BIGINT, scraptype_id BIGINT\nPrimary keys: id\nForeign keys: ['scraptype_id'] references backend_scraptype.['id']; ['stockcategory_id'] references backend_stockcategory.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "scraptype_id"
+        ],
+        "referred_table": "backend_scraptype",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "stockcategory_id"
+        ],
+        "referred_table": "backend_stockcategory",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_stocksale",
+    "text": "Table: backend_stocksale\nColumns: id BIGINT, transaction_type VARCHAR(20), is_sale TINYINT, total_amount DOUBLE, sale_on DATE, created_at DATETIME, category_id BIGINT, provider_id BIGINT, vendor_id BIGINT\nPrimary keys: id\nForeign keys: ['category_id'] references backend_stockcategory.['id']; ['provider_id'] references backend_provider.['id']; ['vendor_id'] references backend_vendors.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "category_id"
+        ],
+        "referred_table": "backend_stockcategory",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "provider_id"
+        ],
+        "referred_table": "backend_provider",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "vendor_id"
+        ],
+        "referred_table": "backend_vendors",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_stocksaleitems",
+    "text": "Table: backend_stocksaleitems\nColumns: id BIGINT, quantity DOUBLE, rate DOUBLE, scrap_type_id BIGINT, stock_sale_id BIGINT\nPrimary keys: id\nForeign keys: ['scrap_type_id'] references backend_scraptype.['id']; ['stock_sale_id'] references backend_stocksale.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "scrap_type_id"
+        ],
+        "referred_table": "backend_scraptype",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "stock_sale_id"
+        ],
+        "referred_table": "backend_stocksale",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_updates",
+    "text": "Table: backend_updates\nColumns: id BIGINT, image VARCHAR(100), start_date DATE, end_date DATE, created_at DATETIME, is_active TINYINT, repeatation VARCHAR(50)\nPrimary keys: id\nForeign keys: ",
+    "foreign_keys": []
+  },
+  {
+    "table": "backend_updates_seen_by",
+    "text": "Table: backend_updates_seen_by\nColumns: id BIGINT, updates_id BIGINT, customer_id BIGINT\nPrimary keys: id\nForeign keys: ['customer_id'] references backend_customer.['id']; ['updates_id'] references backend_updates.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "customer_id"
+        ],
+        "referred_table": "backend_customer",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "updates_id"
+        ],
+        "referred_table": "backend_updates",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_updates_send_to",
+    "text": "Table: backend_updates_send_to\nColumns: id BIGINT, updates_id BIGINT, customer_id BIGINT\nPrimary keys: id\nForeign keys: ['customer_id'] references backend_customer.['id']; ['updates_id'] references backend_updates.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "customer_id"
+        ],
+        "referred_table": "backend_customer",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "updates_id"
+        ],
+        "referred_table": "backend_updates",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_user_fcm_token",
+    "text": "Table: backend_user_fcm_token\nColumns: id BIGINT, fcm_token VARCHAR(255), platform VARCHAR(20), device_id VARCHAR(255), admin_id BIGINT, client_id BIGINT, provider_id BIGINT, customer_id BIGINT, created_at DATETIME, is_active TINYINT\nPrimary keys: id\nForeign keys: ['provider_id'] references backend_provider.['id']; ['client_id'] references backend_bwgclient.['id']; ['admin_id'] references backend_adminuser.['id']; ['customer_id'] references backend_customer.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "provider_id"
+        ],
+        "referred_table": "backend_provider",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "client_id"
+        ],
+        "referred_table": "backend_bwgclient",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "admin_id"
+        ],
+        "referred_table": "backend_adminuser",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "customer_id"
+        ],
+        "referred_table": "backend_customer",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_user_otp",
+    "text": "Table: backend_user_otp\nColumns: id BIGINT, phone_number VARCHAR(20), otp VARCHAR(6), ref_id VARCHAR(255), sent_at DATETIME, expires_at DATETIME, resend_count INTEGER, next_allowed_at DATETIME, is_active TINYINT\nPrimary keys: id\nForeign keys: ",
+    "foreign_keys": []
+  },
+  {
+    "table": "backend_vehicle",
+    "text": "Table: backend_vehicle\nColumns: id BIGINT, created_on DATETIME, driver_name VARCHAR(100), is_active BIT, is_assigned BIT, is_deleted BIT, vehicle_number VARCHAR(20), logistics_partner_id BIGINT, vehicle_type_id BIGINT\nPrimary keys: id\nForeign keys: ['vehicle_type_id'] references backend_vehicle_type.['id']; ['logistics_partner_id'] references backend_logistic_partner.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "vehicle_type_id"
+        ],
+        "referred_table": "backend_vehicle_type",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "logistics_partner_id"
+        ],
+        "referred_table": "backend_logistic_partner",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_vehicle_type",
+    "text": "Table: backend_vehicle_type\nColumns: id BIGINT, created_on DATETIME, image VARCHAR(100), is_active BIT, is_deleted BIT, max_capacity DECIMAL(10, 2), min_capacity DECIMAL(10, 2), vehicle_name VARCHAR(100), units VARCHAR(255)\nPrimary keys: id\nForeign keys: ",
+    "foreign_keys": []
+  },
+  {
+    "table": "backend_vendors",
+    "text": "Table: backend_vendors\nColumns: id BIGINT, name VARCHAR(100), pin_code VARCHAR(6), address LONGTEXT, landmark VARCHAR(100), code VARCHAR(20), materials JSON, phone_number VARCHAR(15), GST_number VARCHAR(15), GST_address LONGTEXT, is_active TINYINT, district_id BIGINT, state_id BIGINT\nPrimary keys: id\nForeign keys: ['district_id'] references backend_district.['id']; ['state_id'] references backend_state.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "district_id"
+        ],
+        "referred_table": "backend_district",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "state_id"
+        ],
+        "referred_table": "backend_state",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_wallettransactions",
+    "text": "Table: backend_wallettransactions\nColumns: id BIGINT, transaction_type VARCHAR(10), transaction_date DATETIME, transaction_amount DOUBLE, transaction_mode VARCHAR(20), wallet_balance DOUBLE, done_by VARCHAR(100), customer_id BIGINT\nPrimary keys: id\nForeign keys: ['customer_id'] references backend_customer.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "customer_id"
+        ],
+        "referred_table": "backend_customer",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_ward",
+    "text": "Table: backend_ward\nColumns: id BIGINT, ward_no INTEGER, ward_name VARCHAR(100), ward_weekday_current JSON, ward_weekday_next JSON, is_active TINYINT, is_deleted TINYINT, localbody_id BIGINT\nPrimary keys: id\nForeign keys: ['localbody_id'] references backend_localbody.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "localbody_id"
+        ],
+        "referred_table": "backend_localbody",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_wardavailability",
+    "text": "Table: backend_wardavailability\nColumns: id BIGINT, available_date DATE, limit INTEGER, remaining_slots INTEGER, localbody_limit_id BIGINT, ward_id BIGINT\nPrimary keys: id\nForeign keys: ['localbody_limit_id'] references backend_localbodylimit.['id']; ['ward_id'] references backend_ward.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "localbody_limit_id"
+        ],
+        "referred_table": "backend_localbodylimit",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "ward_id"
+        ],
+        "referred_table": "backend_ward",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_wastebag",
+    "text": "Table: backend_wastebag\nColumns: id BIGINT, bag_size VARCHAR(20), bag_price DECIMAL(10, 2), bag_cgst DOUBLE, bag_sgst DOUBLE, is_active TINYINT, state_id BIGINT, is_bwg TINYINT\nPrimary keys: id\nForeign keys: ['state_id'] references backend_state.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "state_id"
+        ],
+        "referred_table": "backend_state",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_wastedispatch",
+    "text": "Table: backend_wastedispatch\nColumns: id BIGINT, waste_weight DOUBLE, created_at DATETIME, company_id BIGINT, dispatch_date DATE\nPrimary keys: id\nForeign keys: ['company_id'] references backend_wastedispatchcompany.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "company_id"
+        ],
+        "referred_table": "backend_wastedispatchcompany",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "backend_wastedispatchcompany",
+    "text": "Table: backend_wastedispatchcompany\nColumns: id BIGINT, company_name VARCHAR(100), created_at DATETIME, is_active TINYINT, is_deleted TINYINT, company_short_name VARCHAR(100)\nPrimary keys: id\nForeign keys: ",
+    "foreign_keys": []
+  },
+  {
+    "table": "backend_withdrawal_request_logs",
+    "text": "Table: backend_withdrawal_request_logs\nColumns: id BIGINT, transaction_id BIGINT, action VARCHAR(20), message LONGTEXT, performed_by VARCHAR(255), admin_username VARCHAR(255), performed_at DATETIME\nPrimary keys: id\nForeign keys: ",
+    "foreign_keys": []
+  },
+  {
+    "table": "citizen_menu",
+    "text": "Table: citizen_menu\nColumns: id BIGINT, created_on DATETIME, menu_description VARCHAR(255), image VARCHAR(255), is_active BIT, is_deleted BIT, menu_name VARCHAR(100)\nPrimary keys: id\nForeign keys: ",
+    "foreign_keys": []
+  },
+  {
+    "table": "cnd_cd_transfer_station",
+    "text": "Table: cnd_cd_transfer_station\nColumns: id BIGINT, address VARCHAR(500), capacity_tons DECIMAL(15, 2), closing_time TIME, is_active BIT, is_deleted BIT, latitude DECIMAL(10, 7), longitude DECIMAL(10, 7), opening_time TIME, operating_days JSON, price_per_ton DECIMAL(15, 2), station_name VARCHAR(150), state_id BIGINT\nPrimary keys: id\nForeign keys: ['state_id'] references backend_state.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "state_id"
+        ],
+        "referred_table": "backend_state",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "cnd_vehicle_type_master",
+    "text": "Table: cnd_vehicle_type_master\nColumns: id BIGINT, created_by VARCHAR(50), created_date DATETIME, description TEXT, is_active BIT, modified_by VARCHAR(50), modified_date DATETIME, vehicle_type VARCHAR(100)\nPrimary keys: id\nForeign keys: ",
+    "foreign_keys": []
+  },
+  {
+    "table": "django_admin_log",
+    "text": "Table: django_admin_log\nColumns: id INTEGER, action_time DATETIME, object_id LONGTEXT, object_repr VARCHAR(200), action_flag SMALLINT, change_message LONGTEXT, content_type_id INTEGER, user_id BIGINT\nPrimary keys: id\nForeign keys: ['content_type_id'] references django_content_type.['id']; ['user_id'] references backend_customer.['id']",
+    "foreign_keys": [
+      {
+        "columns": [
+          "content_type_id"
+        ],
+        "referred_table": "django_content_type",
+        "referred_columns": [
+          "id"
+        ]
+      },
+      {
+        "columns": [
+          "user_id"
+        ],
+        "referred_table": "backend_customer",
+        "referred_columns": [
+          "id"
+        ]
+      }
+    ]
+  },
+  {
+    "table": "django_celery_results_chordcounter",
+    "text": "Table: django_celery_results_chordcounter\nColumns: id INTEGER, group_id VARCHAR(255), sub_tasks LONGTEXT, count INTEGER\nPrimary keys: id\nForeign keys: ",
+    "foreign_keys": []
+  },
+  {
+    "table": "django_celery_results_groupresult",
+    "text": "Table: django_celery_results_groupresult\nColumns: id INTEGER, group_id VARCHAR(255), date_created DATETIME, date_done DATETIME, content_type VARCHAR(128), content_encoding VARCHAR(64), result LONGTEXT\nPrimary keys: id\nForeign keys: ",
+    "foreign_keys": []
+  },
+  {
+    "table": "django_celery_results_taskresult",
+    "text": "Table: django_celery_results_taskresult\nColumns: id INTEGER, task_id VARCHAR(255), status VARCHAR(50), content_type VARCHAR(128), content_encoding VARCHAR(64), result LONGTEXT, date_done DATETIME, traceback LONGTEXT, meta LONGTEXT, task_args LONGTEXT, task_kwargs LONGTEXT, task_name VARCHAR(255), worker VARCHAR(100), date_created DATETIME, periodic_task_name VARCHAR(255), date_started DATETIME\nPrimary keys: id\nForeign keys: ",
+    "foreign_keys": []
+  },
+  {
+    "table": "django_content_type",
+    "text": "Table: django_content_type\nColumns: id INTEGER, app_label VARCHAR(100), model VARCHAR(100)\nPrimary keys: id\nForeign keys: ",
+    "foreign_keys": []
+  },
+  {
+    "table": "django_migrations",
+    "text": "Table: django_migrations\nColumns: id BIGINT, app VARCHAR(255), name VARCHAR(255), applied DATETIME\nPrimary keys: id\nForeign keys: ",
+    "foreign_keys": []
+  },
+  {
+    "table": "django_session",
+    "text": "Table: django_session\nColumns: session_key VARCHAR(40), session_data LONGTEXT, expire_date DATETIME\nPrimary keys: session_key\nForeign keys: ",
+    "foreign_keys": []
+  },
+  {
+    "table": "how_it_works",
+    "text": "Table: how_it_works\nColumns: id BIGINT, created_at DATETIME, description VARCHAR(500), display_order INTEGER, icon VARCHAR(50), is_active BIT, title VARCHAR(100), updated_at DATETIME\nPrimary keys: id\nForeign keys: ",
+    "foreign_keys": []
+  },
+  {
+    "table": "waste_type",
+    "text": "Table: waste_type\nColumns: id BIGINT, is_active BIT, is_deleted BIT, waste_type VARCHAR(100)\nPrimary keys: id\nForeign keys: ",
+    "foreign_keys": []
+  }
+]

@@ -1,0 +1,143 @@
+﻿# ============================================================
+# DATABASE QUESTION -> SQL -> REAL DATA -> ANSWER
+# ============================================================
+
+class DatabaseQueryRequest(BaseModel):
+
+    host: str
+
+    port: int = 3306
+
+    database: str
+
+    username: str
+
+    password: str
+
+    question: str
+
+
+@app.post("/api/ai/query")
+def execute_database_question(
+    request: DatabaseQueryRequest
+):
+
+    try:
+
+        # ====================================================
+        # 1. CONNECT TO REAL DATABASE
+        # ====================================================
+
+        engine = create_mysql_engine(
+            host=request.host,
+            port=request.port,
+            database=request.database,
+            username=request.username,
+            password=request.password
+        )
+
+        # ====================================================
+        # 2. QUESTION
+        # ====================================================
+
+        question = request.question.strip()
+
+        if not question:
+
+            raise HTTPException(
+                status_code=400,
+                detail="Question cannot be empty"
+            )
+
+        # ====================================================
+        # 3. SEARCH REAL DATABASE SCHEMA
+        # ====================================================
+
+        search_results = search_schema(
+            question,
+            8
+        )
+
+        if not search_results:
+
+            raise HTTPException(
+                status_code=404,
+                detail="No relevant database schema found"
+            )
+
+        # ====================================================
+        # 4. GENERATE SQL USING ONLY FOUND SCHEMA
+        # ====================================================
+
+        sql = generate_sql(
+            question,
+            search_results
+        )
+
+        # ====================================================
+        # 5. VALIDATE SQL
+        # ====================================================
+
+        validation = validate_sql(
+            sql
+        )
+
+        if not validation["valid"]:
+
+            raise HTTPException(
+                status_code=400,
+                detail=validation
+            )
+
+        safe_sql = validation["sql"]
+
+        # ====================================================
+        # 6. EXECUTE AGAINST REAL MYSQL DATABASE
+        # ====================================================
+
+        result = execute_select(
+            engine,
+            safe_sql
+        )
+
+        # ====================================================
+        # 7. CREATE FAST HUMAN-READABLE ANSWER
+        # ====================================================
+
+        answer = format_answer(
+            question,
+            result
+        )
+
+        # ====================================================
+        # 8. RETURN QUESTION + ANSWER + REAL DATA
+        # ====================================================
+
+        return {
+
+            "success": True,
+
+            "question": question,
+
+            "answer": answer["text"],
+
+            "row_count": result["row_count"],
+
+            "columns": result["columns"],
+
+            "data": result["rows"],
+
+            "sql": safe_sql
+
+        }
+
+    except HTTPException:
+
+        raise
+
+    except Exception as e:
+
+        raise HTTPException(
+            status_code=500,
+            detail=str(e)
+        )

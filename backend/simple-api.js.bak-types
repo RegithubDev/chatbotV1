@@ -1,0 +1,360 @@
+﻿const http = require("http");
+const fs = require("fs");
+const path = require("path");
+require("dotenv").config({ path: path.join(__dirname, ".env") });
+require("dotenv").config({ path: path.join(__dirname, "..", ".env") });
+const mysql = require("mysql2/promise");
+
+const PORT = Number(process.env.PORT || 3020);
+const OLLAMA = process.env.OLLAMA_URL || "http://127.0.0.1:11434";
+const SQL_MODEL = process.env.SQL_MODEL || "qwen2.5-coder:7b-instruct";
+const CATALOG = path.join(__dirname, "..", "data", "catalog", "schema.json");
+const sessions = new Map();
+const STOP = new Set("a an the this that these those is are was were be been being and or not of to in for on from by with as at it its if so do did does how many much what which who where when why please table tables database data row rows record records all some any get fetch select count number named name names give tell about type types of there here show list me my our your connected exist exists based".split(" "));
+
+function send(res, code, body) {
+  res.writeHead(code, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+  res.end(JSON.stringify(body));
+}
+function pool() {
+  return mysql.createPool({
+    host: process.env.DB_HOST || "localhost",
+    port: Number(process.env.DB_PORT || 3306),
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    connectionLimit: 8,
+  });
+}
+function loadCatalog() {
+  if (!fs.existsSync(CATALOG)) return null;
+  return JSON.parse(fs.readFileSync(CATALOG, "utf8"));
+}
+function sess(id) {
+  const k = id || "default";
+  if (!sessions.has(k)) sessions.set(k, { lastTables: [], lastData: [] });
+  return sessions.get(k);
+}
+function readBody(req) {
+  return new Promise((resolve) => {
+    let d = "";
+    req.on("data", (c) => (d += c));
+    req.on("end", () => { try { resolve(d ? JSON.parse(d) : {}); } catch { resolve({}); } });
+  });
+}
+async function think(messages, n) {
+  const groqKey = process.env.GROQ_API_KEY;
+  const chain = [
+    process.env.GROQ_MODEL || "qwen/qwen3.8-27b",
+    "qwen/qwen3.8-27b",
+    "qwen/qwen3.6-27b",
+    "openai/gpt-oss-120b",
+    "openai/gpt-oss-20b",
+    "groq/compound",
+    "groq/compound-mini",
+    "llama-3.1-8b-instant"
+  ].filter((v, i, a) => v && a.indexOf(v) === i);
+
+  if (groqKey) {
+    for (const groqModel of chain) {
+      try {
+        const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: { Authorization: "Bearer " + groqKey, "Content-Type": "application/json" },
+          body: JSON.stringify({ model: groqModel, messages, temperature: 0.4, max_tokens: n || 320 })
+        });
+        if (r.ok) {
+          const data = await r.json();
+          const text = data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content;
+          if (text) { console.log("LLM=groq", groqModel); return text; }
+        }
+        const err = (await r.text()).slice(0, 180);
+        console.log("Groq skip", groqModel, r.status, err);
+        if (r.status === 401 || r.status === 403) break;
+      } catch (e) {
+        console.log("Groq skip", groqModel, e.message);
+      }
+    }
+  }
+
+  const local = process.env.CHAT_MODEL || process.env.SQL_MODEL || "qwen2.5-coder:7b-instruct";
+  const r2 = await fetch((process.env.OLLAMA_URL || "http://127.0.0.1:11434") + "/api/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: local,
+      messages,
+      stream: false,
+      keep_alive: "30m",
+      options: { temperature: 0.4, num_predict: n || 280 }
+    })
+  });
+  if (!r2.ok) throw new Error("local " + r2.status + " " + (await r2.text()));
+  console.log("LLM=local", local);
+  return ((await r2.json()).message || {}).content || "";
+}
+function cols(t) { return (t.columns || []).map((c) => (typeof c === "string" ? c : c.name)); }
+function tokens(q) { return q.toLowerCase().split(/[^a-z0-9_]+/).filter((w) => w.length > 2 && !STOP.has(w)); }
+function scoreTable(t, tks) {
+  const name = t.name.toLowerCase();
+  const parts = name.split("_");
+  const cns = cols(t).map((n) => n.toLowerCase());
+  let score = 0;
+  for (const tok of tks) {
+    if (name === tok) score += 100;
+    else if (name.startsWith(tok) || name.endsWith(tok)) score += 55;
+    else if (name.includes(tok)) score += 36;
+    if (parts.includes(tok)) score += 40;
+    for (const c of cns) { if (c === tok) score += 18; else if (c.includes(tok)) score += 8; }
+  }
+  return score;
+}
+function matchAll(catalog, q) {
+  const tks = tokens(q);
+  return catalog.tables.map((t) => ({ t, name: t.name, columns: cols(t), score: scoreTable(t, tks) })).filter((x) => x.score > 0).sort((a, b) => b.score - a.score);
+}
+function dateCol(names) {
+  return names.find((n) => /order_date|created_at|updated_at|schedule_date|created_on/i.test(n)) || names.find((n) => /date|time|created|updated/i.test(n));
+}
+function pickCols(names) {
+  const prefer = names.filter((n) => /code|status|type|name|size|price|amount|date|customer|platform|comment/i.test(n));
+  return (prefer.length ? prefer : names).slice(0, 10);
+}
+function greet(q) {
+  const s = q.toLowerCase().trim();
+  if (/^(hi|hello|hey|yo|hai|namaste|vanakkam)[\s!.,]*$/.test(s)) return "Hi. I am Recollect AI Bot. Ask about your connected database in normal language. I remember this chat until you start a new one.";
+  if (/how are you/.test(s)) return "Doing well — ready when you are.";
+  if (/who are you|what can you do/.test(s)) return "I search every matching table, read real rows, and explain them in plain language. I will not invent numbers.";
+  if (/thank/.test(s)) return "You're welcome.";
+  return null;
+}
+async function speak(question, facts, tableNames, suggestions) {
+  const names = tableNames || [];
+  const sug = suggestions || [];
+  let spoken = "";
+  try {
+    spoken = (await think([
+      { role: "system", content: "You are Recollect AI Bot. Warm, clear, short paragraphs. Use ONLY the facts. Never invent prices or extra rows. Never mention raw table names, column names, SQL, or the word backend. Use everyday words like biowaste orders, scrap orders, bag prices. Do not list database objects. Speak in short friendly sentences. You may use a light emoji." },
+      { role: "user", content: "Q: " + question + "\nMatching tables: " + names.join(", ") + "\nFacts:\n" + facts + "\nSuggestions: " + sug.join(" | ") }
+    ], 280)).trim();
+  } catch {}
+  const bad = !spoken || /select\s+/i.test(spoken) || (/\$\d/.test(spoken) && String(facts).indexOf("$") < 0);
+  if (bad) {
+    spoken = facts;
+    if (names.length) spoken += "\n\nMatching tables for that keyword:\n" + names.map((n, i) => (i + 1) + ". " + n).join("\n");
+  }
+  if (sug.length && !/you can also ask/i.test(spoken)) spoken += "\n\nYou can also ask:\n- " + sug.join("\n- ");
+  return spoken;
+}
+
+
+function prettyName(n) {
+  return String(n)
+    .replace(/^backend_/, "")
+    .replace(/^auth_/, "")
+    .replace(/_/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+const server = http.createServer(async (req, res) => {
+  if (req.method === "OPTIONS") {
+    res.writeHead(204, { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET,POST,OPTIONS", "Access-Control-Allow-Headers": "Content-Type" });
+    return res.end();
+  }
+  try {
+    if (req.method === "GET" && (req.url === "/" || req.url === "/health")) return send(res, 200, { ok: true, db: process.env.DB_NAME, tables: (loadCatalog() && loadCatalog().tables.length) || 0, knowledge: require("fs").existsSync(require("path").join(__dirname, "..", "data", "knowledge", "db-brief.md")), refreshedAt: loadCatalog() && loadCatalog().refreshedAt });
+    if (req.method === "POST" && req.url === "/session/reset") {
+      const b = await readBody(req);
+      if (b.chatId) sessions.delete(b.chatId);
+      return send(res, 200, { ok: true });
+    }
+    if (req.method === "POST" && req.url === "/schema/refresh") {
+      const db = await pool();
+      try {
+        const [dbn] = await db.query("SELECT DATABASE() AS name");
+        const [tables] = await db.query("SELECT table_name AS name, IFNULL(table_comment,'') AS tableComment FROM information_schema.tables WHERE table_schema = DATABASE() AND table_type='BASE TABLE'");
+        const [c] = await db.query("SELECT table_name AS tableName, column_name AS name, data_type AS dataType FROM information_schema.columns WHERE table_schema = DATABASE()");
+        const [rels] = await db.query("SELECT table_name AS fromTable, column_name AS fromColumn, referenced_table_name AS toTable, referenced_column_name AS toColumn FROM information_schema.key_column_usage WHERE table_schema = DATABASE() AND referenced_table_name IS NOT NULL");
+        const by = {};
+        for (const x of c) { by[x.tableName] = by[x.tableName] || []; by[x.tableName].push({ name: x.name, type: x.dataType }); }
+        const catalog = { database: dbn[0] && dbn[0].name, refreshedAt: new Date().toISOString(), tables: tables.map((t) => ({ name: t.name, comment: t.tableComment, columns: by[t.name] || [] })), relationships: rels };
+        fs.mkdirSync(path.dirname(CATALOG), { recursive: true });
+        fs.writeFileSync(CATALOG, JSON.stringify(catalog, null, 2));
+        return send(res, 200, { database: catalog.database, tables: catalog.tables.length, relationships: catalog.relationships.length });
+      } finally { await db.end(); }
+    }
+    if (req.method === "POST" && req.url === "/ask") {
+      const body = await readBody(req);
+      const q = String(body.question || "").trim();
+      const mem = sess(body.chatId);
+      const steps = [{ label: "Read the message" }];
+      const hello = greet(q);
+      if (hello) return send(res, 200, { answer: hello, sql: null, data: [], steps: [{ label: "Greeting" }], suggestions: ["What is the latest order by type?", "How many tables named order", "Waste bag prices"] });
+
+      const cat = loadCatalog();
+      if (!cat) return send(res, 400, { error: "refresh schema first" });
+      if (/how many tables|number of tables|tables do we have|tables we have|table count/i.test(q) && !/named|called|like order/i.test(q)) {
+        const c0 = loadCatalog();
+        const n = c0 ? c0.tables.length : 0;
+        const answer = n
+          ? ("You currently have **" + n + "** tables in the connected database. 📊")
+          : "Schema is not synced yet. Click Sync schema first.";
+        return send(res, 200, {
+          answer: answer + "\n\nYou can also ask:\n- How many customers do I have?\n- How many orders are there?",
+          sql: null, data: n ? [{ tables: n }] : [],
+          suggestions: ["How many customers do I have?", "How many orders are there?"],
+          steps: [{ label: "Read table count from synced schema" }]
+        });
+      }
+
+      if (/how many customers|number of customers|customer count|customers do i have|customers we have/i.test(q)) {
+        const c0 = loadCatalog();
+        if (!c0) return send(res, 400, { error: "Schema not synced" });
+        const prefer = c0.tables.filter((tb) => /^(backend_)?(customer|customers|user|users)$/i.test(tb.name));
+        const extra = c0.tables.filter((tb) => /customer/i.test(tb.name) && !/log|money|transaction|perday|address|token|otp|device/i.test(tb.name));
+        const seen = new Set();
+        const list = [...prefer, ...extra].filter((tb) => { if (seen.has(tb.name)) return false; seen.add(tb.name); return true; });
+        const dbc = await pool();
+        const bits = [];
+        try {
+          for (const tb of list.slice(0, 8)) {
+            try {
+              const [r] = await dbc.query("SELECT COUNT(*) AS c FROM `" + tb.name + "`");
+              bits.push({ label: prettyName(tb.name), count: Number(r[0].c || 0) });
+            } catch {}
+          }
+        } finally { await dbc.end(); }
+        const main = bits[0];
+        let answer;
+        if (!main) answer = "I could not find a customer list in the synced schema yet.";
+        else if (bits.length === 1) answer = "You have **" + main.count.toLocaleString() + "** customers. 🙂";
+        else answer = "You have **" + main.count.toLocaleString() + "** customers in the main list. Other related counts: " + bits.slice(1).map((b) => b.count.toLocaleString() + " in " + b.label).join(", ") + ".";
+        return send(res, 200, {
+          answer: answer + "\n\nYou can also ask:\n- How many orders are there?\n- What is the latest order?",
+          sql: null, data: bits, suggestions: ["How many orders are there?", "What is the latest order?"],
+          steps: [{ label: "Counted customer rows from the live database" }]
+        });
+      }
+
+
+      if (/how many orders|number of orders|total orders|count of orders/i.test(q)) {
+        const orderTables = cat.tables.filter((tb) => /order/i.test(tb.name) && !/cart|log|usedbag|analytics|permission/i.test(tb.name));
+        const dbc = await pool();
+        const bits = [];
+        try {
+          for (const tb of orderTables.slice(0, 12)) {
+            try {
+              const [c] = await dbc.query("SELECT COUNT(*) AS c FROM `" + tb.name + "`");
+              bits.push({ label: prettyName(tb.name), count: Number(c[0].c || 0) });
+            } catch {}
+          }
+        } finally { await dbc.end(); }
+        const total = bits.reduce((s, b) => s + b.count, 0);
+        const facts = bits.map((b) => b.label + ": " + b.count).join("\n") + "\nall together: " + total;
+        const spoken = await think([
+          { role: "system", content: "Friendly assistant. Answer how many orders exist using ONLY these counts. Everyday English. No table names, no SQL, no JSON, no word backend. Light emoji ok." },
+          { role: "user", content: "Question: " + q + "\nCounts:\n" + facts }
+        ], 180);
+        let answer = (spoken || "").trim();
+        if (!answer || /backend_|SELECT /i.test(answer)) {
+          answer = "Across the connected system I can see " + total.toLocaleString() + " orders in total. ";
+          answer += bits.filter((b) => b.count).map((b) => b.label + " has " + b.count.toLocaleString()).join(", ") + ".";
+        }
+        const suggestions = ["What is the latest biowaste order?", "How many scrap orders?", "Bag prices"];
+        answer += "\n\nYou can also ask:\n- " + suggestions.join("\n- ");
+        return send(res, 200, { answer, sql: null, data: [], suggestions, steps: [{ label: "Counted every order group" }] });
+      }
+
+
+      if (/how many tables are there|number of tables|table count/i.test(q) && !/named|called|like/.test(q)) {
+        const suggestions = ["How many tables named order", "Show waste bag prices"];
+        const answer = await speak(q, "The connected database has " + cat.tables.length + " tables and " + (cat.relationships || []).length + " relationships.", [], suggestions);
+        return send(res, 200, { answer, sql: null, data: [{ tables: cat.tables.length }], steps: [{ label: "Schema count only" }], suggestions });
+      }
+      if (/how many tables named|tables named|tables matching|tables like/i.test(q)) {
+        const tks = tokens(q);
+        const found = cat.tables.filter((t) => tks.some((tok) => t.name.toLowerCase().includes(tok)));
+        const suggestions = found.slice(0, 6).map((t) => "Show latest in " + t.name);
+        const facts = found.length ? found.map((t, i) => (i + 1) + ". " + t.name).join("\n") : "No table name matched.";
+        const answer = await speak(q, facts, found.map((t) => t.name), suggestions);
+        return send(res, 200, { answer, sql: null, data: found.map((t) => ({ table: t.name })), steps: [{ label: "Listed every matching table name" }], suggestions });
+      }
+
+      const hits = matchAll(cat, q);
+      steps.push({ label: hits.length ? ("Keyword matched " + hits.length + " table(s)") : "No keyword match" });
+      if (!hits.length) {
+        const suggestions = ["How many tables are there", "Tables named order"];
+        const answer = await speak(q, "I could not match that wording to a table or column.", [], suggestions);
+        return send(res, 200, { answer, sql: null, data: [], steps, suggestions });
+      }
+
+      const wantsLatest = /latest|last|recent|newest/.test(q);
+      const orderHits = hits.filter((h) => /order/i.test(h.name));
+      const workHits = (wantsLatest && orderHits.length) ? orderHits : hits;
+      const names = workHits.map((h) => h.name);
+      const suggestions = names.slice(0, 6).map((n) => (wantsLatest ? "Latest row in " : "Show ") + n);
+
+      if (wantsLatest && workHits.length) {
+        steps.push({ label: "Reading the newest row from each matching order table" });
+        const db = await pool();
+        const blocks = [];
+        const sqls = [];
+        try {
+          for (const h of workHits.slice(0, 8)) {
+            const d = dateCol(h.columns);
+            const pc = pickCols(h.columns).map((n) => "`" + n + "`").join(", ");
+            const sql = d ? ("SELECT " + pc + " FROM `" + h.name + "` ORDER BY `" + d + "` DESC LIMIT 1") : ("SELECT " + pc + " FROM `" + h.name + "` LIMIT 1");
+            try {
+              const [rows] = await db.query(sql);
+              sqls.push(sql);
+              if (rows && rows[0]) {
+                const line = Object.entries(rows[0]).filter(([, v]) => v !== null && v !== "").map(([k, v]) => k.replace(/_/g, " ") + ": " + v).join("; ");
+                blocks.push({ table: h.name, line, row: rows[0] });
+              } else blocks.push({ table: h.name, line: "no rows", row: null });
+            } catch (e) {
+              blocks.push({ table: h.name, line: "could not read", row: null });
+            }
+          }
+        } finally { await db.end(); }
+        const facts = blocks.map((b) => b.table + " -> " + b.line).join("\n");
+        const answer = await speak(q, facts, names, suggestions);
+        const data = blocks.filter((b) => b.row).map((b) => Object.assign({ _table: b.table }, b.row));
+        mem.lastTables = names;
+        mem.lastData = data;
+        return send(res, 200, { answer, sql: sqls.join(";\n"), data, tablesUsed: names, steps, suggestions });
+      }
+
+      if (hits.length > 1 && tokens(q).length <= 3) {
+        const facts = names.map((n, i) => (i + 1) + ". " + n + " (" + workHits[i].columns.slice(0, 6).join(", ") + ")").join("\n");
+        const answer = await speak(q, "Every table matching that keyword:\n" + facts, names, suggestions);
+        return send(res, 200, { answer, sql: null, data: workHits.map((h) => ({ table: h.name, columns: h.columns.join(", ") })), steps, suggestions });
+      }
+
+      const best = workHits[0];
+      const d = dateCol(best.columns);
+      const pc = pickCols(best.columns).map((n) => "`" + n + "`").join(", ");
+      let sql = "SELECT " + pc + " FROM `" + best.name + "` LIMIT 20";
+      if (wantsLatest && d) sql = "SELECT " + pc + " FROM `" + best.name + "` ORDER BY `" + d + "` DESC LIMIT 1";
+      const db = await pool();
+      let rows = [];
+      try { rows = (await db.query(sql))[0].slice(0, 30); } finally { await db.end(); }
+      const facts = (rows.length ? rows.map((r, i) => (i + 1) + ". " + Object.entries(r).filter(([, v]) => v !== null && v !== "").map(([k, v]) => k.replace(/_/g, " ") + ": " + v).join("; ")).join("\n") : "0 rows.") + (names.length > 1 ? ("\nOther matching tables: " + names.slice(1).join(", ")) : "");
+      const answer = await speak(q, facts, names, suggestions);
+      mem.lastTables = names;
+      mem.lastData = rows;
+      return send(res, 200, { answer, sql, data: rows, tablesUsed: names, steps, suggestions });
+    }
+    return send(res, 404, { error: "Not Found" });
+  } catch (err) {
+    return send(res, 500, { error: err.message });
+  }
+});
+const { spawn } = require("child_process");
+spawn(process.execPath, [require("path").join(__dirname, "sync-lite.js")], { stdio: "inherit" });
+server.listen(PORT, "0.0.0.0", () => console.log("Recollect AI Bot http://0.0.0.0:" + PORT));
+
+
+
+
+
+

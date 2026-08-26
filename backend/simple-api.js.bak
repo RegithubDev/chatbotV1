@@ -1,0 +1,236 @@
+﻿const http = require("http");
+const fs = require("fs");
+const path = require("path");
+require("dotenv").config({ path: path.join(__dirname, ".env") });
+require("dotenv").config({ path: path.join(__dirname, "..", ".env") });
+const mysql = require("mysql2/promise");
+
+const PORT = 3020;
+const OLLAMA = process.env.OLLAMA_URL || "http://127.0.0.1:11434";
+const SQL_MODEL = process.env.SQL_MODEL || "qwen2.5-coder:7b-instruct";
+const CATALOG = path.join(__dirname, "..", "data", "catalog", "schema.json");
+
+function send(res, code, body) {
+  res.writeHead(code, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+  res.end(JSON.stringify(body));
+}
+function pool() {
+  return mysql.createPool({
+    host: process.env.DB_HOST || "localhost",
+    port: Number(process.env.DB_PORT || 3306),
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    connectionLimit: 8,
+  });
+}
+function loadCatalog() {
+  if (!fs.existsSync(CATALOG)) return null;
+  return JSON.parse(fs.readFileSync(CATALOG, "utf8"));
+}
+function readBody(req) {
+  return new Promise((resolve) => {
+    let d = "";
+    req.on("data", (c) => (d += c));
+    req.on("end", () => { try { resolve(d ? JSON.parse(d) : {}); } catch { resolve({}); } });
+  });
+}
+async function chat(messages, n) {
+  const r = await fetch(OLLAMA + "/api/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: SQL_MODEL,
+      messages,
+      stream: false,
+      keep_alive: "30m",
+      options: { temperature: 0, num_predict: n || 220 },
+    }),
+  });
+  if (!r.ok) throw new Error(await r.text());
+  return ((await r.json()).message || {}).content || "";
+}
+function parseJsonLoose(text) {
+  const cleaned = String(text).replace(/```json|```/g, "").trim();
+  const a = cleaned.indexOf("{");
+  const b = cleaned.lastIndexOf("}");
+  if (a < 0 || b < 0) return null;
+  try { return JSON.parse(cleaned.slice(a, b + 1)); } catch { return null; }
+}
+function toks(q) {
+  const raw = q.toLowerCase().split(/[^a-z0-9_]+/).filter((t) => t.length > 2);
+  const out = new Set();
+  for (const w of raw) {
+    out.add(w);
+    if (w.endsWith("ies") && w.length > 4) out.add(w.slice(0, -3) + "y");
+    if (w.endsWith("es") && w.length > 3) out.add(w.slice(0, -2));
+    if (w.endsWith("s") && w.length > 3) out.add(w.slice(0, -1));
+  }
+  return [...out];
+}
+function colNames(t) {
+  return (t.columns || []).map((c) => (typeof c === "string" ? c : c.name));
+}
+function findCol(names, re) {
+  return names.find((n) => re.test(n));
+}
+function scoreTable(table, questionToks) {
+  const name = table.name.toLowerCase();
+  const parts = name.split(/[_]+/);
+  const cols = colNames(table).map((n) => n.toLowerCase());
+  let score = 0;
+  for (const tok of questionToks) {
+    if (name === tok) score += 90;
+    else if (parts.includes(tok)) score += 48;
+    else if (name.includes(tok)) score += 24;
+    if (cols.includes(tok)) score += 14;
+    else if (cols.some((c) => c.includes(tok))) score += 5;
+  }
+  const wantsName = questionToks.some((t) => /type|name|bag|size|category|product|item/.test(t));
+  const wantsPrice = questionToks.some((t) => /price|rate|cost|amount|fee|charge/.test(t));
+  const wantsLatest = questionToks.some((t) => /latest|last|recent|newest/.test(t));
+  const names = colNames(table);
+  if (wantsName && findCol(names, /type|name|size|title|label|category/i)) score += 20;
+  if (wantsPrice && findCol(names, /price|rate|amount|cost|fee|charge/i)) score += 28;
+  if (wantsName && wantsPrice && findCol(names, /type|name|size|title|label/i) && findCol(names, /price|rate|amount|cost/i)) score += 40;
+  if (wantsLatest && findCol(names, /date|time|created|updated/i)) score += 16;
+  return score;
+}
+function retrieve(catalog, question) {
+  const tks = toks(question);
+  return catalog.tables
+    .map((t) => ({ t, score: scoreTable(t, tks), columns: colNames(t) }))
+    .filter((x) => x.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 8);
+}
+function expandFk(catalog, seedNames) {
+  const set = new Set(seedNames);
+  for (const r of catalog.relationships || []) {
+    if (set.has(r.fromTable)) set.add(r.toTable);
+    if (set.has(r.toTable)) set.add(r.fromTable);
+  }
+  return catalog.tables.filter((t) => set.has(t.name));
+}
+function fallbackSql(hit, question) {
+  const names = hit.columns;
+  const tks = toks(question);
+  const wantsLatest = /latest|last|recent|newest/.test(question);
+  const pick = [];
+  const nameCol = findCol(names, /type|name|size|title|label|category|code/i);
+  const priceCol = findCol(names, /price|rate|amount|cost|fee|charge/i);
+  const dateCol = findCol(names, /^(.*_date|created_at|updated_at|created_on)$/i) || findCol(names, /date|time|created|updated/i);
+  if (nameCol) pick.push(nameCol);
+  if (priceCol) pick.push(priceCol);
+  if (dateCol) pick.push(dateCol);
+  if (!pick.length) pick.push(...names.slice(0, 8));
+  const cols = [...new Set(pick)].map((n) => "`" + n + "`").join(", ");
+  let sql = "SELECT " + cols + " FROM `" + hit.t.name + "`";
+  if (wantsLatest && dateCol) sql += " ORDER BY `" + dateCol + "` DESC LIMIT 1";
+  else sql += " LIMIT 30";
+  return sql;
+}
+function validate(sql, catalog) {
+  let s = String(sql || "").trim().replace(/;+\s*$/, "");
+  s = s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/--.*$/gm, "");
+  if (!s || s.includes(";")) return { ok: false, reason: "bad", sql: s };
+  if (!/^(select|with)\b/i.test(s)) return { ok: false, reason: "not select", sql: s };
+  if (/\b(insert|update|delete|drop|alter|truncate|create|grant|revoke|replace|outfile|load_file)\b/i.test(s)) return { ok: false, reason: "unsafe", sql: s };
+  const knownT = new Set(catalog.tables.map((t) => t.name.toLowerCase()));
+  const tables = Array.from(s.matchAll(/\b(?:from|join)\s+`?([a-zA-Z0-9_]+)`?/gi)).map((m) => m[1]);
+  for (const t of tables) if (!knownT.has(t.toLowerCase())) return { ok: false, reason: "unknown table " + t, sql: s };
+  const aliases = {};
+  const re = /\b(?:from|join)\s+`?([a-zA-Z0-9_]+)`?(?:\s+(?:as\s+)?`?([a-zA-Z0-9_]+)`?)?/gi;
+  let m;
+  while ((m = re.exec(s))) {
+    const table = m[1];
+    const alias = m[2] && !/^(on|where|left|right|inner|outer|join|order|group|limit)$/i.test(m[2]) ? m[2] : table;
+    aliases[alias.toLowerCase()] = table.toLowerCase();
+    aliases[table.toLowerCase()] = table.toLowerCase();
+  }
+  const cols = new Map(catalog.tables.map((t) => [t.name.toLowerCase(), new Set(colNames(t).map((n) => n.toLowerCase()))]));
+  for (const q of s.matchAll(/\b([a-zA-Z_][a-zA-Z0-9_]*)\.`?([a-zA-Z_][a-zA-Z0-9_]*)`?/g)) {
+    const table = aliases[q[1].toLowerCase()];
+    if (!table) return { ok: false, reason: "unknown alias " + q[1], sql: s };
+    const set = cols.get(table);
+    if (!set || !set.has(q[2].toLowerCase())) return { ok: false, reason: "unknown column " + table + "." + q[2], sql: s };
+  }
+  if (!/\blimit\s+\d+/i.test(s)) s += " LIMIT 30";
+  return { ok: true, sql: s, tables };
+}
+
+const server = http.createServer(async (req, res) => {
+  if (req.method === "OPTIONS") {
+    res.writeHead(204, { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET,POST,OPTIONS", "Access-Control-Allow-Headers": "Content-Type" });
+    return res.end();
+  }
+  try {
+    if (req.method === "GET" && (req.url === "/" || req.url === "/health")) return send(res, 200, { ok: true, db: process.env.DB_NAME });
+    if (req.method === "POST" && req.url === "/schema/refresh") {
+      const db = await pool();
+      try {
+        const [dbn] = await db.query("SELECT DATABASE() AS name");
+        const [tables] = await db.query(`SELECT table_name AS name, IFNULL(table_comment,'') AS tableComment FROM information_schema.tables WHERE table_schema = DATABASE() AND table_type='BASE TABLE'`);
+        const [cols] = await db.query(`SELECT table_name AS tableName, column_name AS name, data_type AS dataType FROM information_schema.columns WHERE table_schema = DATABASE()`);
+        const [rels] = await db.query(`SELECT table_name AS fromTable, column_name AS fromColumn, referenced_table_name AS toTable, referenced_column_name AS toColumn FROM information_schema.key_column_usage WHERE table_schema = DATABASE() AND referenced_table_name IS NOT NULL`);
+        const by = {};
+        for (const c of cols) { by[c.tableName] = by[c.tableName] || []; by[c.tableName].push({ name: c.name, type: c.dataType }); }
+        const catalog = { database: dbn[0] && dbn[0].name, refreshedAt: new Date().toISOString(), tables: tables.map((t) => ({ name: t.name, comment: t.tableComment, columns: by[t.name] || [] })), relationships: rels };
+        fs.mkdirSync(path.dirname(CATALOG), { recursive: true });
+        fs.writeFileSync(CATALOG, JSON.stringify(catalog, null, 2));
+        return send(res, 200, { database: catalog.database, tables: catalog.tables.length, relationships: catalog.relationships.length });
+      } finally { await db.end(); }
+    }
+    if (req.method === "GET" && req.url === "/schema/stats") {
+      const c = loadCatalog();
+      if (!c) return send(res, 400, { error: "refresh schema first" });
+      return send(res, 200, { database: c.database, tables: c.tables.length, relationships: c.relationships.length });
+    }
+    if (req.method === "POST" && req.url === "/ask") {
+      const q = ((await readBody(req)).question || "").trim();
+      const c = loadCatalog();
+      if (!c) return send(res, 400, { error: "refresh schema first" });
+      const ranked = retrieve(c, q);
+      if (!ranked.length) return send(res, 200, { answer: "I could not match that to anything in the connected database.", sql: null });
+
+      const seed = ranked.slice(0, 5).map((x) => x.t.name);
+      const slice = expandFk(c, seed).length ? expandFk(c, seed).slice(0, 8) : ranked.slice(0, 5).map((x) => x.t);
+      const schemaText = slice.map((t) => t.name + " (" + colNames(t).join(", ") + ")").join("\n");
+
+      const raw = await chat([
+        { role: "system", content: "You write one SELECT for the current database. Use ONLY listed tables and columns. Never invent names. Prefer one table when it already has the requested fields. JSON only {\"sql\":\"SELECT ...\"}." },
+        { role: "user", content: "SCHEMA:\n" + schemaText + "\nQUESTION:\n" + q },
+      ], 200);
+      let parsed = parseJsonLoose(raw) || {};
+      let safe = parsed.sql ? validate(parsed.sql, c) : { ok: false, reason: "no sql" };
+      if (!safe.ok) safe = { ok: true, sql: fallbackSql(ranked[0], q), tables: [ranked[0].t.name] };
+
+      const db = await pool();
+      let rows = [];
+      try {
+        try {
+          rows = (await db.query(safe.sql))[0].slice(0, 40);
+        } catch {
+          safe = { ok: true, sql: fallbackSql(ranked[0], q), tables: [ranked[0].t.name] };
+          rows = (await db.query(safe.sql))[0].slice(0, 40);
+        }
+      } finally { await db.end(); }
+
+      const facts = rows.map((r) => Object.entries(r).filter(([, v]) => v !== null && v !== "").map(([k, v]) => k.replace(/_/g, " ") + ": " + v).join("; ")).join("\n");
+      let answer = rows.length ? facts : "Nothing matching that was found in the connected database.";
+      try {
+        const spoken = await chat([
+          { role: "system", content: "Answer like a person. Use only these facts. Never mention SQL, queries, joins, or column invention. If the user asked for types and prices, list each type/size with its price." },
+          { role: "user", content: "Question: " + q + "\nFacts:\n" + facts.slice(0, 3500) },
+        ], 260);
+        if (spoken && !/select\s+/i.test(spoken)) answer = spoken.trim();
+      } catch {}
+      return send(res, 200, { answer, sql: safe.sql, tablesUsed: safe.tables || seed, rowCount: rows.length });
+    }
+    return send(res, 404, { error: "Not Found" });
+  } catch (err) {
+    return send(res, 500, { error: err.message });
+  }
+});
+server.listen(PORT, "0.0.0.0", () => console.log("Recollect AI Bot http://127.0.0.1:" + PORT));
+

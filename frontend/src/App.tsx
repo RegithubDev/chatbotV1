@@ -1,0 +1,1317 @@
+﻿import { useState, useRef, useEffect, useCallback, useMemo } from "react";
+
+const API =
+  import.meta.env.VITE_API_URL ||
+  `${window.location.protocol}//${window.location.hostname}:3020`;
+
+/* ---------------------------------------------------------------------- */
+/*  Types                                                                  */
+/* ---------------------------------------------------------------------- */
+
+type Role = "user" | "agent" | "system";
+
+interface Message {
+  id: string;
+  role: Role;
+  text: string;
+  sql?: string;
+  data?: Record<string, any>[];
+  steps?: { label: string }[];
+  suggestions?: string[];
+  durationMs?: number;
+  error?: boolean;
+  timestamp: number;
+}
+
+interface Chat {
+  id: string;
+  title: string;
+  messages: Message[];
+  createdAt: number;
+}
+
+/* ---------------------------------------------------------------------- */
+/*  Helpers                                                                 */
+/* ---------------------------------------------------------------------- */
+
+function uid() {
+  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+}
+
+function formatMs(ms: number) {
+  if (ms < 1000) return `${Math.round(ms)}ms`;
+  return `${(ms / 1000).toFixed(2)}s`;
+}
+
+function titleFromQuestion(q: string) {
+  const clean = q.trim().replace(/\s+/g, " ");
+  return clean.length > 42 ? clean.slice(0, 42) + "…" : clean || "New chat";
+}
+
+/** Minimal, dependency-free markdown: **bold**, bullet lists, paragraphs. */
+function renderInline(text: string, keyPrefix: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, i) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={`${keyPrefix}-${i}`}>{part.slice(2, -2)}</strong>;
+    }
+    return <span key={`${keyPrefix}-${i}`}>{part}</span>;
+  });
+}
+
+function MarkdownText({ text }: { text: string }) {
+  const lines = text.split("\n");
+  const blocks: React.ReactNode[] = [];
+  let listBuffer: string[] = [];
+
+  function flushList(key: string) {
+    if (listBuffer.length === 0) return;
+    blocks.push(
+      <ul className="md-list" key={key}>
+        {listBuffer.map((item, i) => (
+          <li key={i}>{renderInline(item, `${key}-li-${i}`)}</li>
+        ))}
+      </ul>
+    );
+    listBuffer = [];
+  }
+
+  lines.forEach((line, idx) => {
+    const trimmed = line.trim();
+    const bulletMatch = trimmed.match(/^[-*]\s+(.*)/);
+    if (bulletMatch) {
+      listBuffer.push(bulletMatch[1]);
+      return;
+    }
+    flushList(`list-${idx}`);
+    if (trimmed === "") {
+      blocks.push(<div className="md-spacer" key={`sp-${idx}`} />);
+    } else {
+      blocks.push(<p className="md-p" key={`p-${idx}`}>{renderInline(trimmed, `p-${idx}`)}</p>);
+    }
+  });
+  flushList("list-end");
+
+  return <div className="md">{blocks}</div>;
+}
+
+function newChat(): Chat {
+  return { id: uid(), title: "New chat", messages: [], createdAt: Date.now() };
+}
+
+/* ---------------------------------------------------------------------- */
+/*  Voice input (Web Speech API, optional)                                 */
+/* ---------------------------------------------------------------------- */
+
+function useVoiceInput(onResult: (text: string) => void) {
+  const [listening, setListening] = useState(false);
+  const [supported, setSupported] = useState(true);
+  const recRef = useRef<any>(null);
+
+  useEffect(() => {
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SR) {
+      setSupported(false);
+      return;
+    }
+    const rec = new SR();
+    rec.continuous = false;
+    rec.interimResults = false;
+    rec.lang = "en-US";
+    rec.onresult = (e: any) => {
+      const transcript = Array.from(e.results).map((r: any) => r[0].transcript).join(" ");
+      onResult(transcript);
+    };
+    rec.onend = () => setListening(false);
+    rec.onerror = () => setListening(false);
+    recRef.current = rec;
+  }, [onResult]);
+
+  const toggle = useCallback(() => {
+    if (!recRef.current) return;
+    if (listening) {
+      recRef.current.stop();
+      setListening(false);
+    } else {
+      try {
+        recRef.current.start();
+        setListening(true);
+      } catch {}
+    }
+  }, [listening]);
+
+  return { listening, supported, toggle };
+}
+
+/* ---------------------------------------------------------------------- */
+/*  Typing dots — the one animated flourish                                */
+/* ---------------------------------------------------------------------- */
+
+function TypingDots({ elapsedMs }: { elapsedMs: number }) {
+  return (
+    <div className="typing">
+      <span className="dot" />
+      <span className="dot" />
+      <span className="dot" />
+      <span className="typing-time">{formatMs(elapsedMs)}</span>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------------- */
+/*  Message                                                                 */
+/* ---------------------------------------------------------------------- */
+
+function MessageBlock({
+  msg,
+  sqlOpen,
+  onToggleSql,
+  onSuggest,
+}: {
+  msg: Message;
+  sqlOpen: boolean;
+  onToggleSql: (id: string) => void;
+  onSuggest?: (s: string) => void;
+}) {
+  if (msg.role === "system") {
+    return (
+      <div className="msg-system">
+        <span>{msg.text}</span>
+      </div>
+    );
+  }
+
+  const isUser = msg.role === "user";
+
+  return (
+    <div className={`msg ${isUser ? "msg-user" : "msg-agent"}`}>
+      <div className="msg-avatar">
+        {isUser ? (
+          <div className="avatar avatar-user">U</div>
+        ) : (
+          <div className="avatar avatar-agent">
+            <SparkIcon />
+          </div>
+        )}
+      </div>
+      <div className="msg-body">
+        <div className="msg-name">{isUser ? "You" : "Recollect AI Bot"}</div>
+        <div className={`msg-text ${msg.error ? "msg-text-error" : ""}`}>
+          {isUser ? msg.text : <MarkdownText text={msg.text} />}
+        </div>
+
+                {!isUser && msg.data && msg.data.length > 0 && (
+          <div className="table-wrap">
+            <table className="result-table">
+              <thead>
+                <tr>{Object.keys(msg.data[0]).map((c) => <th key={c}>{c.replace(/_/g, " ")}</th>)}</tr>
+              </thead>
+              <tbody>
+                {msg.data.slice(0, 40).map((row, i) => (
+                  <tr key={i}>
+                    {Object.keys(msg.data![0]).map((c) => (
+                      <td key={c}>{row[c] == null ? "—" : String(row[c])}</td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {!isUser && msg.suggestions && msg.suggestions.length > 0 && (
+          <div className="suggest-row">
+            {msg.suggestions.map((s) => (
+              <button key={s} className="chip" onClick={() => onSuggest && onSuggest(s)} type="button">
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {msg.sql && (
+          <div className="sql-wrap">
+            <button className="sql-toggle" onClick={() => onToggleSql(msg.id)}>
+              <CodeIcon />
+              {sqlOpen ? "Hide SQL query" : "Show SQL query"}
+              <span className={`sql-chev ${sqlOpen ? "sql-chev-open" : ""}`}>
+                <ChevronIcon />
+              </span>
+            </button>
+            {sqlOpen && (
+              <div className="sql-panel">
+                <div className="sql-panel-head">
+                  <span>SQL</span>
+                  <button
+                    className="copy-btn"
+                    onClick={() => navigator.clipboard?.writeText(msg.sql || "")}
+                  >
+                    Copy
+                  </button>
+                </div>
+                <pre className="sql-code">{msg.sql}</pre>
+              </div>
+            )}
+          </div>
+        )}
+
+        {typeof msg.durationMs === "number" && (
+          <div className="msg-meta">Answered in {formatMs(msg.durationMs)}</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------------- */
+/*  Main App                                                               */
+/* ---------------------------------------------------------------------- */
+
+export default function App() {
+  const [chats, setChats] = useState<Chat[]>([newChat()]);
+  const [activeId, setActiveId] = useState<string>(() => chats[0].id);
+  const [question, setQuestion] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+  const [dark, setDark] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth > 780 : true
+  );
+  const [openSqlId, setOpenSqlId] = useState<string | null>(null);
+  const [emptyPrompts, setEmptyPrompts] = useState<string[]>(["How many tables are connected?"]);
+  const [schemaStatus, setSchemaStatus] = useState<{ tables?: number; knowledge?: boolean; refreshedAt?: string } | null>(null);
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const timerRef = useRef<number | null>(null);
+  const startRef = useRef<number>(0);
+
+  const activeChat = useMemo(() => chats.find((c) => c.id === activeId)!, [chats, activeId]);
+    const hasMessages = activeChat.messages.length > 0;
+
+  async function loadSyncStatus() {
+    try {
+      const r = await fetch(API + "/health");
+      const d = await r.json();
+      setSchemaStatus({
+        tables: d.tables,
+        knowledge: d.knowledge,
+        refreshedAt: d.refreshedAt,
+      });
+    } catch {}
+  }
+    useEffect(() => { loadSyncStatus(); }, []);
+  useEffect(() => {
+    fetch(API + "/schema/suggestions")
+      .then((r) => r.json())
+      .then((d) => {
+        if (Array.isArray(d.suggestions) && d.suggestions.length) setEmptyPrompts(d.suggestions);
+        if (d.tables) setSchemaStatus((s) => ({ ...(s || {}), tables: d.tables }));
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+  }, [dark]);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  }, [activeChat.messages, loading]);
+
+  useEffect(() => {
+    if (loading) {
+      startRef.current = performance.now();
+      timerRef.current = window.setInterval(() => setElapsed(performance.now() - startRef.current), 60);
+    } else if (timerRef.current) {
+      window.clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    return () => {
+      if (timerRef.current) window.clearInterval(timerRef.current);
+    };
+  }, [loading]);
+
+  const handleVoiceResult = useCallback((text: string) => {
+    setQuestion((prev) => (prev ? prev + " " + text : text));
+    textareaRef.current?.focus();
+  }, []);
+  const { listening, supported: voiceSupported, toggle: toggleVoice } = useVoiceInput(handleVoiceResult);
+
+  function updateActiveChat(fn: (c: Chat) => Chat) {
+    setChats((prev) => prev.map((c) => (c.id === activeId ? fn(c) : c)));
+  }
+
+  function pushMessage(msg: Omit<Message, "id" | "timestamp">) {
+    const full: Message = { ...msg, id: uid(), timestamp: Date.now() };
+    updateActiveChat((c) => ({ ...c, messages: [...c.messages, full] }));
+    return full.id;
+  }
+
+  function startNewChat() {
+    const c = newChat();
+    setChats((prev) => [c, ...prev]);
+    setActiveId(c.id);
+    setQuestion("");
+    if (window.innerWidth <= 780) setSidebarOpen(false);
+    fetch(API + "/session/reset", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chatId: c.id }),
+    }).catch(() => {});
+  }
+
+  async function refreshSchema() {
+    setRefreshing(true);
+    const start = performance.now();
+    try {
+      const r = await fetch(API + "/schema/refresh", { method: "POST" });
+      const data = await r.json();
+      const dur = performance.now() - start;
+      if (!r.ok) {
+        pushMessage({ role: "system", text: `Schema refresh failed — ${data.error || "unknown error"}` });
+      } else {
+        setSchemaStatus({ tables: data.tables });
+        pushMessage({ role: "system", text: `Schema synced — ${data.tables} tables loaded in ${formatMs(dur)}.` });
+      }
+    } catch (e: any) {
+      pushMessage({ role: "system", text: `Could not reach the database service — ${e.message}` });
+    } finally {
+      setRefreshing(false);
+    }
+  }
+
+  async function ask() {
+    const q = question.trim();
+    if (!q || loading) return;
+
+    const isFirst = activeChat.messages.length === 0;
+    pushMessage({ role: "user", text: q });
+    if (isFirst) {
+      updateActiveChat((c) => ({ ...c, title: titleFromQuestion(q) }));
+    }
+    setQuestion("");
+    setLoading(true);
+    setElapsed(0);
+    const start = performance.now();
+
+    try {
+      const r = await fetch(API + "/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: q, chatId: activeChat.id }),
+      });
+      const data = await r.json();
+      const dur = performance.now() - start;
+      if (!r.ok) throw new Error(data.error || "The agent couldn't complete that request.");
+            const full = String(data.answer || "No answer was returned.").replace(/backend_[a-z0-9_]+/gi, (m: string) =>
+        m.replace(/^backend_/, "").replace(/_/g, " ")
+      );
+      const chips = (data.suggestions || []).map((s: string) =>
+        String(s).replace(/backend_[a-z0-9_]+/gi, (m: string) => m.replace(/^backend_/, "").replace(/_/g, " "))
+      );
+      const id = uid();
+      updateActiveChat((c) => ({
+        ...c,
+        messages: [...c.messages, {
+          id,
+          role: "agent" as Role,
+          text: "",
+          sql: data.sql,
+          data: data.data || [],
+          steps: data.steps || [],
+          suggestions: [] as string[],
+          durationMs: dur,
+          timestamp: Date.now(),
+        }],
+      }));
+      const words = full.split(/(\s+)/);
+      let acc = "";
+      for (let i = 0; i < words.length; i++) {
+        acc += words[i];
+        const shown = acc;
+        updateActiveChat((c) => ({
+          ...c,
+          messages: c.messages.map((m) => (m.id === id ? { ...m, text: shown } : m)),
+        }));
+        await new Promise((res) => setTimeout(res, 16));
+      }
+      updateActiveChat((c) => ({
+        ...c,
+        messages: c.messages.map((m) => (m.id === id ? { ...m, text: full, suggestions: chips } : m)),
+      }));
+    } catch (e: any) {
+      const dur = performance.now() - start;
+      pushMessage({ role: "agent", text: e.message || "Something went wrong reaching the agent.", error: true, durationMs: dur });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      ask();
+    }
+  }
+
+  function autoGrow(el: HTMLTextAreaElement) {
+    el.style.height = "auto";
+    el.style.height = Math.min(el.scrollHeight, 160) + "px";
+  }
+
+  return (
+    <div className="app">
+      <style>{CSS}</style>
+
+      {/* ---------- Sidebar ---------- */}
+      {sidebarOpen && (
+        <div className="sidebar-backdrop" onClick={() => setSidebarOpen(false)} />
+      )}
+      <aside className={`sidebar ${sidebarOpen ? "sidebar-open" : "sidebar-closed"}`}>
+        <div className="sidebar-top">
+          <button className="new-chat-btn" onClick={startNewChat}>
+            <PlusIcon />
+            New chat
+          </button>
+        </div>
+
+        <div className="sidebar-list">
+          <div className="sidebar-label">Recent</div>
+          {chats.map((c) => (
+            <button
+              key={c.id}
+              className={`sidebar-item ${c.id === activeId ? "sidebar-item-active" : ""}`}
+              onClick={() => {
+                setActiveId(c.id);
+                if (window.innerWidth <= 780) setSidebarOpen(false);
+              }}
+            >
+              <ChatIcon />
+              <span className="sidebar-item-text">{c.title}</span>
+            </button>
+          ))}
+        </div>
+
+        <div className="sidebar-bottom">
+          <button className="sidebar-action" onClick={refreshSchema} disabled={refreshing}>
+            {refreshing ? <span className="spinner-inline" /> : <RefreshIcon />}
+            <span>{refreshing ? "Syncing schema…" : "Sync schema"}</span>
+          </button>
+                    <div className="schema-badge">
+            {schemaStatus?.tables
+              ? `Synced · ${schemaStatus.tables} tables${schemaStatus.knowledge ? " · brief ready" : " · brief missing"}`
+              : "DB not synced"}
+          </div>
+
+          <button className="sidebar-action" onClick={() => setDark((d) => !d)}>
+            {dark ? <SunIcon /> : <MoonIcon />}
+            <span>{dark ? "Light mode" : "Dark mode"}</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* ---------- Main ---------- */}
+      <div className="main">
+        <header className="topbar">
+          <button className="icon-btn sidebar-toggle" onClick={() => setSidebarOpen((v) => !v)} title="Toggle sidebar">
+            <SidebarIcon />
+          </button>
+          <div className="topbar-title">
+            <SparkIcon small />
+            <span>Recollect AI Bot</span>
+          </div>
+          <div className="topbar-spacer" />
+        </header>
+
+        {!hasMessages ? (
+          <div className="empty-state">
+            <div className="empty-mark">
+              <SparkIcon />
+            </div>
+            <h1>Ask your database anything</h1>
+            <p>Ask in normal language. Suggestions below come from the connected database.</p>
+
+            <div className="empty-grid">
+              {emptyPrompts.map((s) => (
+                <button key={s} className="empty-card" onClick={() => setQuestion(s)}>
+                  {s}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <main className="scroll" ref={scrollRef}>
+            <div className="thread">
+              {activeChat.messages.map((m) => (
+                <MessageBlock
+                  key={m.id}
+                  msg={m}
+                  sqlOpen={openSqlId === m.id}
+                  onToggleSql={(id) => setOpenSqlId((cur) => (cur === id ? null : id))}
+                  onSuggest={(s) => setQuestion(s)}
+                />
+              ))}
+              {loading && (
+                <div className="msg msg-agent">
+                  <div className="msg-avatar">
+                    <div className="avatar avatar-agent avatar-thinking">
+                      <SparkIcon />
+                    </div>
+                  </div>
+                  <div className="msg-body">
+                    <div className="msg-name">Recollect AI Bot</div>
+                    <TypingDots elapsedMs={elapsed} />
+                  </div>
+                </div>
+              )}
+            </div>
+          </main>
+        )}
+
+        <footer className="composer">
+          <div className="composer-inner">
+            <div className="input-row">
+              <textarea
+                ref={textareaRef}
+                className="textarea"
+                value={question}
+                onChange={(e) => {
+                  setQuestion(e.target.value);
+                  autoGrow(e.target);
+                }}
+                onKeyDown={onKeyDown}
+                placeholder="Message Recollect AI Bot…"
+                rows={1}
+              />
+              <div className="input-actions">
+                {voiceSupported && (
+                  <button
+                    className={`icon-btn ${listening ? "icon-btn-active" : ""}`}
+                    onClick={toggleVoice}
+                    title={listening ? "Stop listening" : "Voice input"}
+                    type="button"
+                  >
+                    {listening ? <PulsingMic /> : <MicIcon />}
+                  </button>
+                )}
+                <button className="send-btn" onClick={ask} disabled={loading || !question.trim()}>
+                  {loading ? <span className="spinner" /> : <SendIcon />}
+                </button>
+              </div>
+            </div>
+            <div className="composer-hint">
+              {listening ? "Listening…" : "Local free machine. A short delay is normal, and the AI can make mistakes."}
+            </div>
+          </div>
+        </footer>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------------- */
+/*  Icons                                                                   */
+/* ---------------------------------------------------------------------- */
+
+function SparkIcon({ small }: { small?: boolean }) {
+  const s = small ? 16 : 18;
+  return (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none">
+      <path d="M12 2L14.2 9.8L22 12L14.2 14.2L12 22L9.8 14.2L2 12L9.8 9.8L12 2Z" fill="currentColor" />
+    </svg>
+  );
+}
+function PlusIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+      <path d="M12 5v14M5 12h14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  );
+}
+function ChatIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+      <path d="M4 4h16v12H8l-4 4V4Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+    </svg>
+  );
+}
+function RefreshIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+      <path d="M4 4v5h5M20 20v-5h-5M4.5 15a8 8 0 0014.9 2.5M19.5 9A8 8 0 004.6 6.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+function SunIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+    </svg>
+  );
+}
+function MoonIcon() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
+      <path d="M20 14.5A8.5 8.5 0 119.5 4a7 7 0 0010.5 10.5Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+    </svg>
+  );
+}
+function SidebarIcon() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+      <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M9 4v16" stroke="currentColor" strokeWidth="1.6" />
+    </svg>
+  );
+}
+function CodeIcon() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+      <path d="M8 6L2 12L8 18M16 6L22 12L16 18" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+function ChevronIcon() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+      <path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+function SendIcon() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+      <path d="M12 19V5M5 12l7-7 7 7" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+function MicIcon() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="none">
+      <rect x="9" y="3" width="6" height="11" rx="3" stroke="currentColor" strokeWidth="1.7" />
+      <path d="M5 11a7 7 0 0014 0M12 18v3" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" />
+    </svg>
+  );
+}
+function PulsingMic() {
+  return (
+    <span className="mic-pulse-wrap">
+      <MicIcon />
+      <span className="mic-pulse" />
+    </span>
+  );
+}
+
+/* ---------------------------------------------------------------------- */
+/*  Styles — light, warm, Claude-like simplicity                           */
+/* ---------------------------------------------------------------------- */
+
+const CSS = `
+* { box-sizing: border-box; }
+
+:root[data-theme="light"] {
+  --bg: #FFFFFF;
+  --bg-sidebar: #F7F7F7;
+  --bg-elevated: #ffffff;
+  --bg-hover: #EFEFEF;
+  --border: #E2E2E2;
+  --text: #1A1A1A;
+  --text-dim: #666666;
+  --text-faint: #999999;
+  --accent: #1A1A1A;
+  --accent-text: #ffffff;
+  --accent-soft: rgba(0,0,0,0.06);
+  --danger: #B3261E;
+  --mono-bg: #F5F5F5;
+  --shadow: 0 1px 2px rgba(0,0,0,0.04);
+}
+
+:root[data-theme="dark"] {
+  --bg: #171717;
+  --bg-sidebar: #141414;
+  --bg-elevated: #212121;
+  --bg-hover: #2A2A2A;
+  --border: #333333;
+  --text: #EDEDED;
+  --text-dim: #A3A3A3;
+  --text-faint: #757575;
+  --accent: #EDEDED;
+  --accent-text: #171717;
+  --accent-soft: rgba(255,255,255,0.08);
+  --danger: #E5847A;
+  --mono-bg: #1D1D1D;
+  --shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+
+.app {
+  height: 100dvh;
+  width: 100%;
+  display: flex;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
+  overflow: hidden;
+}
+
+/* ---------- Sidebar ---------- */
+
+.sidebar {
+  width: 260px;
+  flex-shrink: 0;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  transition: margin-left 0.2s ease;
+  overflow: hidden;
+}
+.sidebar-closed { margin-left: -260px; }
+
+.sidebar-backdrop {
+  display: none;
+}
+
+.sidebar-top { padding: 14px 12px 6px; }
+
+.new-chat-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  padding: 9px 12px;
+  border-radius: 9px;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+}
+.new-chat-btn:hover { background: var(--bg-hover); }
+
+.sidebar-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sidebar-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 6px 8px 4px;
+}
+
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 8px 9px;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+}
+.sidebar-item:hover { background: var(--bg-hover); color: var(--text); }
+.sidebar-item-active { background: var(--bg-hover); color: var(--text); }
+.sidebar-item-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-bottom {
+  border-top: 1px solid var(--border);
+  padding: 10px 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sidebar-action {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 8px 9px;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+}
+.sidebar-action:hover:not(:disabled) { background: var(--bg-hover); color: var(--text); }
+.sidebar-action:disabled { opacity: 0.6; cursor: default; }
+
+.schema-badge {
+  font-size: 11px;
+  color: var(--text-faint);
+  padding: 2px 9px 6px;
+}
+
+/* ---------- Main column ---------- */
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  text-align: left;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.topbar-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 600;
+  font-size: 14.5px;
+  color: var(--text);
+}
+.topbar-title svg { color: var(--accent); }
+.topbar-spacer { flex: 1; }
+
+.icon-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: none;
+  color: var(--text-dim);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.icon-btn:hover { background: var(--bg-hover); color: var(--text); }
+.icon-btn-active { color: var(--danger); }
+
+/* ---------- Empty state ---------- */
+
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 24px;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.empty-mark {
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.empty-state h1 {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0 0 8px;
+  letter-spacing: -0.01em;
+}
+
+.empty-state p {
+  font-size: 14px;
+  color: var(--text-dim);
+  margin: 0 0 28px;
+  line-height: 1.55;
+}
+
+.empty-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  width: 100%;
+}
+
+.empty-card {
+  text-align: left;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-family: inherit;
+  font-size: 13px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  line-height: 1.4;
+}
+.empty-card:hover { background: var(--bg-hover); color: var(--text); border-color: var(--accent); }
+
+/* ---------- Thread ---------- */
+
+.scroll {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.thread {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 28px 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.msg-system {
+  align-self: center;
+  font-size: 12px;
+  color: var(--text-faint);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  border-radius: 999px;
+}
+
+.msg { display: flex; gap: 12px; align-items: flex-start; }
+
+.msg-avatar { flex-shrink: 0; }
+
+.avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+}
+.avatar-agent { background: var(--accent); color: var(--accent-text); }
+.avatar-user { background: var(--bg-hover); color: var(--text-dim); border: 1px solid var(--border); }
+.avatar-thinking { animation: pulse-avatar 1.5s ease-in-out infinite; }
+@keyframes pulse-avatar { 0%,100% { opacity: 1; } 50% { opacity: 0.55; } }
+
+.msg-body { flex: 1; min-width: 0; padding-top: 3px; }
+
+.msg-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-dim);
+  margin-bottom: 4px;
+}
+
+.msg-text {
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.msg-text-error { color: var(--danger); }
+
+.md { display: flex; flex-direction: column; }
+.md-p { margin: 0; }
+.md-spacer { height: 10px; }
+.md-list {
+  margin: 4px 0 4px;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.md-list li { line-height: 1.6; }
+
+.msg-meta {
+  margin-top: 6px;
+  font-size: 11.5px;
+  color: var(--text-faint);
+}
+
+/* ---------- SQL disclosure ---------- */
+
+.sql-wrap { margin-top: 10px; }
+
+.sql-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  font-size: 12.5px;
+  font-family: inherit;
+  padding: 6px 11px;
+  border-radius: 7px;
+  cursor: pointer;
+}
+.sql-toggle:hover { color: var(--text); border-color: var(--accent); }
+.sql-chev { display: flex; transition: transform 0.15s ease; }
+.sql-chev-open { transform: rotate(90deg); }
+
+.sql-panel {
+  margin-top: 8px;
+  background: var(--mono-bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.sql-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 12px;
+  font-size: 11px;
+  color: var(--text-faint);
+  border-bottom: 1px solid var(--border);
+  font-family: "JetBrains Mono", monospace;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.copy-btn {
+  background: none;
+  border: none;
+  color: var(--text-dim);
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.copy-btn:hover { color: var(--accent); }
+
+.sql-code {
+  margin: 0;
+  padding: 12px 14px;
+  font-family: "JetBrains Mono", "SF Mono", monospace;
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--text);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* ---------- Typing indicator ---------- */
+
+.typing {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 0;
+}
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-faint);
+  animation: bounce 1.2s ease-in-out infinite;
+}
+.dot:nth-child(2) { animation-delay: 0.15s; }
+.dot:nth-child(3) { animation-delay: 0.3s; }
+@keyframes bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+  30% { transform: translateY(-4px); opacity: 1; }
+}
+.typing-time {
+  margin-left: 6px;
+  font-size: 11px;
+  color: var(--text-faint);
+  font-family: "JetBrains Mono", monospace;
+}
+
+/* ---------- Composer ---------- */
+
+.composer {
+  flex-shrink: 0;
+  padding: 8px 20px 18px;
+}
+
+.composer-inner {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.input-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 10px 10px 10px 16px;
+  box-shadow: var(--shadow);
+  transition: border-color 0.15s ease;
+}
+.input-row:focus-within { border-color: var(--accent); }
+
+.textarea {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  resize: none;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 14.5px;
+  line-height: 1.5;
+  max-height: 160px;
+  padding: 6px 0;
+}
+.textarea::placeholder { color: var(--text-faint); }
+
+.input-actions { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+
+.mic-pulse-wrap { position: relative; display: flex; align-items: center; justify-content: center; }
+.mic-pulse {
+  position: absolute;
+  inset: -6px;
+  border-radius: 50%;
+  border: 1.5px solid var(--danger);
+  animation: mic-ping 1.2s ease-out infinite;
+}
+@keyframes mic-ping {
+  0% { transform: scale(0.6); opacity: 0.8; }
+  100% { transform: scale(1.6); opacity: 0; }
+}
+
+.send-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  border: none;
+  background: var(--accent);
+  color: var(--accent-text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+}
+.send-btn:hover:not(:disabled) { transform: scale(1.05); }
+.send-btn:disabled { opacity: 0.35; cursor: default; }
+
+.spinner, .spinner-inline {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.35);
+  border-top-color: currentColor;
+  animation: spin 0.7s linear infinite;
+}
+.spinner-inline { border: 2px solid var(--border); border-top-color: var(--accent); }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.table-wrap { margin-top: 12px; overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; }
+.result-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.result-table th, .result-table td { padding: 8px 10px; border-bottom: 1px solid var(--border); text-align: left; white-space: nowrap; }
+.result-table th { background: var(--bg-hover); }
+.suggest-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+.chip { background:var(--bg-hover); border:1px solid var(--border); color:var(--text-dim); font:inherit; font-size:12px; padding:7px 11px; border-radius:999px; cursor:pointer; }
+.chip:hover { color:var(--text); }
+.composer-hint {
+  margin-top: 9px;
+  font-size: 11.5px;
+  color: var(--text-faint);
+  text-align: center;
+}
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 780px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 40;
+    height: 100dvh;
+    width: 82vw;
+    max-width: 300px;
+    margin-left: 0;
+    transform: translateX(-100%);
+    transition: transform 0.22s ease;
+    box-shadow: none;
+  }
+  .sidebar-open { transform: translateX(0); box-shadow: 4px 0 24px rgba(0,0,0,0.25); }
+  .sidebar-closed { transform: translateX(-100%); }
+
+  .sidebar-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 35;
+    animation: backdrop-in 0.15s ease;
+  }
+  @keyframes backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+
+  .main { width: 100%; }
+  .empty-grid { grid-template-columns: 1fr; }
+  .thread { max-width: 100%; }
+  .composer-inner { max-width: 100%; }
+}
+
+@media (max-width: 480px) {
+  .app { height: 100dvh; }
+  .topbar { padding: 10px 12px; }
+  .topbar-title span { font-size: 14px; }
+  .thread { padding: 16px 12px 8px; gap: 18px; }
+  .msg { gap: 9px; }
+  .avatar { width: 25px; height: 25px; }
+  .msg-text { font-size: 14.5px; }
+  .composer { padding: 6px 10px 12px; }
+  .input-row { padding: 8px 8px 8px 13px; border-radius: 14px; }
+  .empty-state { padding: 16px; }
+  .empty-state h1 { font-size: 18px; }
+  .empty-state p { font-size: 13px; margin-bottom: 20px; }
+  .empty-card { font-size: 12.5px; padding: 11px 12px; }
+  .sql-code { font-size: 11.5px; }
+}
+
+@media (max-width: 360px) {
+  .sidebar { max-width: 88vw; }
+  .empty-state h1 { font-size: 16.5px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+}
+`;
+
+
+
+
+
+
+
+
+

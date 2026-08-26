@@ -1,0 +1,1428 @@
+{
+  "database": "recollect-local",
+  "refreshedAt": "2026-08-26T12:41:37.019Z",
+  "tables": [
+    {
+      "name": "addresses",
+      "pretty": "addresses",
+      "pk": [
+        "id"
+      ],
+      "inbound": 0,
+      "columns": [
+        {
+          "name": "address",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "created_at",
+          "type": "datetime",
+          "key": ""
+        },
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "PRI"
+        },
+        {
+          "name": "label",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "user_id",
+          "type": "bigint",
+          "key": "MUL"
+        }
+      ],
+      "master": false
+    },
+    {
+      "name": "audit_events",
+      "pretty": "audit events",
+      "pk": [
+        "id"
+      ],
+      "inbound": 0,
+      "columns": [
+        {
+          "name": "action",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "created_at",
+          "type": "datetime",
+          "key": "MUL"
+        },
+        {
+          "name": "details",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "PRI"
+        },
+        {
+          "name": "role",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "target_id",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "target_type",
+          "type": "varchar",
+          "key": "MUL"
+        },
+        {
+          "name": "user_id",
+          "type": "bigint",
+          "key": "MUL"
+        }
+      ],
+      "master": false
+    },
+    {
+      "name": "circles",
+      "pretty": "circles",
+      "pk": [
+        "id"
+      ],
+      "inbound": 4,
+      "columns": [
+        {
+          "name": "code",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "created_at",
+          "type": "datetime",
+          "key": ""
+        },
+        {
+          "name": "geometry",
+          "type": "multipolygon",
+          "key": ""
+        },
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "PRI"
+        },
+        {
+          "name": "name",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime",
+          "key": ""
+        },
+        {
+          "name": "zone_id",
+          "type": "bigint",
+          "key": "MUL"
+        }
+      ],
+      "master": true
+    },
+    {
+      "name": "corporations",
+      "pretty": "corporations",
+      "pk": [
+        "id"
+      ],
+      "inbound": 2,
+      "columns": [
+        {
+          "name": "created_at",
+          "type": "datetime",
+          "key": ""
+        },
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "PRI"
+        },
+        {
+          "name": "name",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime",
+          "key": ""
+        }
+      ],
+      "master": false
+    },
+    {
+      "name": "escalation_rules",
+      "pretty": "escalation rules",
+      "pk": [
+        "id"
+      ],
+      "inbound": 0,
+      "columns": [
+        {
+          "name": "channels",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "created_at",
+          "type": "datetime",
+          "key": ""
+        },
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "PRI"
+        },
+        {
+          "name": "level",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "target_role",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "trigger_offset",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime",
+          "key": ""
+        }
+      ],
+      "master": false
+    },
+    {
+      "name": "escalations",
+      "pretty": "escalations",
+      "pk": [
+        "id"
+      ],
+      "inbound": 0,
+      "columns": [
+        {
+          "name": "created_at",
+          "type": "datetime",
+          "key": ""
+        },
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "PRI"
+        },
+        {
+          "name": "level",
+          "type": "varchar",
+          "key": "MUL"
+        },
+        {
+          "name": "raised_by",
+          "type": "bigint",
+          "key": ""
+        },
+        {
+          "name": "reason",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "request_id",
+          "type": "bigint",
+          "key": "MUL"
+        }
+      ],
+      "master": false
+    },
+    {
+      "name": "flyway_schema_history",
+      "pretty": "flyway schema history",
+      "pk": [
+        "installed_rank"
+      ],
+      "inbound": 0,
+      "columns": [
+        {
+          "name": "checksum",
+          "type": "int",
+          "key": ""
+        },
+        {
+          "name": "description",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "execution_time",
+          "type": "int",
+          "key": ""
+        },
+        {
+          "name": "installed_by",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "installed_on",
+          "type": "timestamp",
+          "key": ""
+        },
+        {
+          "name": "installed_rank",
+          "type": "int",
+          "key": "PRI"
+        },
+        {
+          "name": "script",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "success",
+          "type": "tinyint",
+          "key": "MUL"
+        },
+        {
+          "name": "type",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "version",
+          "type": "varchar",
+          "key": ""
+        }
+      ],
+      "master": false
+    },
+    {
+      "name": "invoices",
+      "pretty": "invoices",
+      "pk": [
+        "id"
+      ],
+      "inbound": 0,
+      "columns": [
+        {
+          "name": "amount",
+          "type": "decimal",
+          "key": ""
+        },
+        {
+          "name": "circle_id",
+          "type": "bigint",
+          "key": "MUL"
+        },
+        {
+          "name": "corporation_id",
+          "type": "bigint",
+          "key": "MUL"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime",
+          "key": ""
+        },
+        {
+          "name": "due_at",
+          "type": "date",
+          "key": ""
+        },
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "PRI"
+        },
+        {
+          "name": "issued_at",
+          "type": "date",
+          "key": ""
+        },
+        {
+          "name": "month",
+          "type": "varchar",
+          "key": "MUL"
+        },
+        {
+          "name": "rate_per_ton",
+          "type": "decimal",
+          "key": ""
+        },
+        {
+          "name": "request_count",
+          "type": "int",
+          "key": ""
+        },
+        {
+          "name": "status",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "tonnage",
+          "type": "decimal",
+          "key": ""
+        }
+      ],
+      "master": false
+    },
+    {
+      "name": "notifications",
+      "pretty": "notifications",
+      "pk": [
+        "id"
+      ],
+      "inbound": 0,
+      "columns": [
+        {
+          "name": "created_at",
+          "type": "datetime",
+          "key": ""
+        },
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "PRI"
+        },
+        {
+          "name": "message",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "read",
+          "type": "bit",
+          "key": "MUL"
+        },
+        {
+          "name": "title",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "type",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "user_id",
+          "type": "bigint",
+          "key": "MUL"
+        }
+      ],
+      "master": false
+    },
+    {
+      "name": "payments",
+      "pretty": "payments",
+      "pk": [
+        "id"
+      ],
+      "inbound": 0,
+      "columns": [
+        {
+          "name": "amount",
+          "type": "decimal",
+          "key": ""
+        },
+        {
+          "name": "created_at",
+          "type": "datetime",
+          "key": ""
+        },
+        {
+          "name": "gst",
+          "type": "decimal",
+          "key": ""
+        },
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "PRI"
+        },
+        {
+          "name": "method",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "request_id",
+          "type": "bigint",
+          "key": "MUL"
+        },
+        {
+          "name": "status",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "total",
+          "type": "decimal",
+          "key": ""
+        },
+        {
+          "name": "txn_id",
+          "type": "varchar",
+          "key": "MUL"
+        },
+        {
+          "name": "user_id",
+          "type": "bigint",
+          "key": "MUL"
+        }
+      ],
+      "master": false
+    },
+    {
+      "name": "photos",
+      "pretty": "photos",
+      "pk": [
+        "id"
+      ],
+      "inbound": 0,
+      "columns": [
+        {
+          "name": "captured_at",
+          "type": "datetime",
+          "key": ""
+        },
+        {
+          "name": "content_type",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "PRI"
+        },
+        {
+          "name": "lat",
+          "type": "decimal",
+          "key": ""
+        },
+        {
+          "name": "lng",
+          "type": "decimal",
+          "key": ""
+        },
+        {
+          "name": "original_filename",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "request_id",
+          "type": "bigint",
+          "key": "MUL"
+        },
+        {
+          "name": "size",
+          "type": "bigint",
+          "key": ""
+        },
+        {
+          "name": "stage",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "storage_key",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "url",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "user_id",
+          "type": "bigint",
+          "key": "MUL"
+        }
+      ],
+      "master": false
+    },
+    {
+      "name": "pricing_rules",
+      "pretty": "pricing rules",
+      "pk": [
+        "id"
+      ],
+      "inbound": 0,
+      "columns": [
+        {
+          "name": "active",
+          "type": "bit",
+          "key": ""
+        },
+        {
+          "name": "base_rate",
+          "type": "decimal",
+          "key": ""
+        },
+        {
+          "name": "created_at",
+          "type": "datetime",
+          "key": ""
+        },
+        {
+          "name": "effective_from",
+          "type": "date",
+          "key": ""
+        },
+        {
+          "name": "effective_to",
+          "type": "date",
+          "key": ""
+        },
+        {
+          "name": "gst_rate",
+          "type": "decimal",
+          "key": ""
+        },
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "PRI"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime",
+          "key": ""
+        }
+      ],
+      "master": false
+    },
+    {
+      "name": "request_code_sequence",
+      "pretty": "request code sequence",
+      "pk": [
+        "id"
+      ],
+      "inbound": 0,
+      "columns": [
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "PRI"
+        },
+        {
+          "name": "last_val",
+          "type": "bigint",
+          "key": ""
+        },
+        {
+          "name": "prefix",
+          "type": "varchar",
+          "key": "MUL"
+        },
+        {
+          "name": "version",
+          "type": "bigint",
+          "key": ""
+        },
+        {
+          "name": "year",
+          "type": "int",
+          "key": ""
+        }
+      ],
+      "master": false
+    },
+    {
+      "name": "status_flows",
+      "pretty": "status flows",
+      "pk": [
+        "id"
+      ],
+      "inbound": 0,
+      "columns": [
+        {
+          "name": "created_at",
+          "type": "datetime",
+          "key": ""
+        },
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "PRI"
+        },
+        {
+          "name": "status",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "step_order",
+          "type": "int",
+          "key": ""
+        },
+        {
+          "name": "terminal",
+          "type": "bit",
+          "key": ""
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime",
+          "key": ""
+        }
+      ],
+      "master": false
+    },
+    {
+      "name": "tat_rules",
+      "pretty": "tat rules",
+      "pk": [
+        "id"
+      ],
+      "inbound": 0,
+      "columns": [
+        {
+          "name": "breach_action",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "created_at",
+          "type": "datetime",
+          "key": ""
+        },
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "PRI"
+        },
+        {
+          "name": "request_type",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "tat_hours",
+          "type": "decimal",
+          "key": ""
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime",
+          "key": ""
+        },
+        {
+          "name": "warning_hours",
+          "type": "decimal",
+          "key": ""
+        }
+      ],
+      "master": false
+    },
+    {
+      "name": "transfer_stations",
+      "pretty": "transfer stations",
+      "pk": [
+        "id"
+      ],
+      "inbound": 1,
+      "columns": [
+        {
+          "name": "address",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "capacity_tons",
+          "type": "decimal",
+          "key": ""
+        },
+        {
+          "name": "contact",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "created_at",
+          "type": "datetime",
+          "key": ""
+        },
+        {
+          "name": "days",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "hours",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "PRI"
+        },
+        {
+          "name": "lat",
+          "type": "decimal",
+          "key": ""
+        },
+        {
+          "name": "lng",
+          "type": "decimal",
+          "key": ""
+        },
+        {
+          "name": "name",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "pricing_per_ton",
+          "type": "decimal",
+          "key": ""
+        },
+        {
+          "name": "status",
+          "type": "varchar",
+          "key": "MUL"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime",
+          "key": ""
+        },
+        {
+          "name": "used_tons",
+          "type": "decimal",
+          "key": ""
+        }
+      ],
+      "master": false
+    },
+    {
+      "name": "users",
+      "pretty": "users",
+      "pk": [
+        "id"
+      ],
+      "inbound": 5,
+      "columns": [
+        {
+          "name": "agency",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "avatar_url",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "capacity",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "circle_id",
+          "type": "bigint",
+          "key": "MUL"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime",
+          "key": ""
+        },
+        {
+          "name": "deleted_at",
+          "type": "datetime",
+          "key": ""
+        },
+        {
+          "name": "driver_status",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "email",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "employee_id",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "PRI"
+        },
+        {
+          "name": "mobile",
+          "type": "varchar",
+          "key": "MUL"
+        },
+        {
+          "name": "name",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "password_hash",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "role",
+          "type": "varchar",
+          "key": "MUL"
+        },
+        {
+          "name": "status",
+          "type": "varchar",
+          "key": "MUL"
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime",
+          "key": ""
+        },
+        {
+          "name": "vehicle",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "vehicle_type",
+          "type": "varchar",
+          "key": ""
+        }
+      ],
+      "master": true
+    },
+    {
+      "name": "vehicle_types",
+      "pretty": "vehicle types",
+      "pk": [
+        "id"
+      ],
+      "inbound": 0,
+      "columns": [
+        {
+          "name": "available",
+          "type": "bit",
+          "key": ""
+        },
+        {
+          "name": "created_at",
+          "type": "datetime",
+          "key": ""
+        },
+        {
+          "name": "icon",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "PRI"
+        },
+        {
+          "name": "max_capacity",
+          "type": "decimal",
+          "key": ""
+        },
+        {
+          "name": "min_capacity",
+          "type": "decimal",
+          "key": ""
+        },
+        {
+          "name": "price_per_ton",
+          "type": "decimal",
+          "key": ""
+        },
+        {
+          "name": "type",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime",
+          "key": ""
+        }
+      ],
+      "master": false
+    },
+    {
+      "name": "wards",
+      "pretty": "wards",
+      "pk": [
+        "id"
+      ],
+      "inbound": 1,
+      "columns": [
+        {
+          "name": "circle_id",
+          "type": "bigint",
+          "key": "MUL"
+        },
+        {
+          "name": "code",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "created_at",
+          "type": "datetime",
+          "key": ""
+        },
+        {
+          "name": "geometry",
+          "type": "multipolygon",
+          "key": ""
+        },
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "PRI"
+        },
+        {
+          "name": "name",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime",
+          "key": ""
+        }
+      ],
+      "master": false
+    },
+    {
+      "name": "waste_requests",
+      "pretty": "waste requests",
+      "pk": [
+        "id"
+      ],
+      "inbound": 3,
+      "columns": [
+        {
+          "name": "actual_weight",
+          "type": "decimal",
+          "key": ""
+        },
+        {
+          "name": "address",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "agency",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "amount",
+          "type": "decimal",
+          "key": ""
+        },
+        {
+          "name": "circle_id",
+          "type": "bigint",
+          "key": "MUL"
+        },
+        {
+          "name": "citizen_name",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "created_at",
+          "type": "datetime",
+          "key": "MUL"
+        },
+        {
+          "name": "created_by",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "deleted_at",
+          "type": "datetime",
+          "key": ""
+        },
+        {
+          "name": "driver_id",
+          "type": "bigint",
+          "key": "MUL"
+        },
+        {
+          "name": "estimated_weight",
+          "type": "decimal",
+          "key": ""
+        },
+        {
+          "name": "gross_weight",
+          "type": "decimal",
+          "key": ""
+        },
+        {
+          "name": "gst",
+          "type": "decimal",
+          "key": ""
+        },
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "PRI"
+        },
+        {
+          "name": "latitude",
+          "type": "decimal",
+          "key": ""
+        },
+        {
+          "name": "location",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "longitude",
+          "type": "decimal",
+          "key": ""
+        },
+        {
+          "name": "mobile",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "notes",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "payment_status",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "pickup_date",
+          "type": "date",
+          "key": ""
+        },
+        {
+          "name": "request_code",
+          "type": "varchar",
+          "key": "UNI"
+        },
+        {
+          "name": "service_type",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "status",
+          "type": "varchar",
+          "key": "MUL"
+        },
+        {
+          "name": "tare_weight",
+          "type": "decimal",
+          "key": ""
+        },
+        {
+          "name": "tat_status",
+          "type": "varchar",
+          "key": "MUL"
+        },
+        {
+          "name": "total",
+          "type": "decimal",
+          "key": ""
+        },
+        {
+          "name": "transfer_station_id",
+          "type": "bigint",
+          "key": "MUL"
+        },
+        {
+          "name": "txn_id",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "type",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime",
+          "key": ""
+        },
+        {
+          "name": "variance_pct",
+          "type": "decimal",
+          "key": ""
+        },
+        {
+          "name": "vehicle",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "verify_remarks",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "ward_id",
+          "type": "bigint",
+          "key": "MUL"
+        },
+        {
+          "name": "waste_type",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "zone_id",
+          "type": "bigint",
+          "key": "MUL"
+        }
+      ],
+      "master": true
+    },
+    {
+      "name": "weighments",
+      "pretty": "weighments",
+      "pk": [
+        "id"
+      ],
+      "inbound": 0,
+      "columns": [
+        {
+          "name": "captured_at",
+          "type": "datetime",
+          "key": ""
+        },
+        {
+          "name": "gross_weight",
+          "type": "decimal",
+          "key": ""
+        },
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "PRI"
+        },
+        {
+          "name": "net_weight",
+          "type": "decimal",
+          "key": ""
+        },
+        {
+          "name": "request_id",
+          "type": "bigint",
+          "key": "MUL"
+        },
+        {
+          "name": "tare_weight",
+          "type": "decimal",
+          "key": ""
+        },
+        {
+          "name": "weighbridge_id",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "weighment_ref",
+          "type": "varchar",
+          "key": ""
+        }
+      ],
+      "master": false
+    },
+    {
+      "name": "zones",
+      "pretty": "zones",
+      "pk": [
+        "id"
+      ],
+      "inbound": 2,
+      "columns": [
+        {
+          "name": "code",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "corporation_id",
+          "type": "bigint",
+          "key": "MUL"
+        },
+        {
+          "name": "created_at",
+          "type": "datetime",
+          "key": ""
+        },
+        {
+          "name": "geometry",
+          "type": "multipolygon",
+          "key": ""
+        },
+        {
+          "name": "id",
+          "type": "bigint",
+          "key": "PRI"
+        },
+        {
+          "name": "name",
+          "type": "varchar",
+          "key": ""
+        },
+        {
+          "name": "updated_at",
+          "type": "datetime",
+          "key": ""
+        }
+      ],
+      "master": false
+    }
+  ],
+  "relationships": [
+    {
+      "fromTable": "addresses",
+      "fromColumn": "user_id",
+      "toTable": "users",
+      "toColumn": "id"
+    },
+    {
+      "fromTable": "audit_events",
+      "fromColumn": "user_id",
+      "toTable": "users",
+      "toColumn": "id"
+    },
+    {
+      "fromTable": "circles",
+      "fromColumn": "zone_id",
+      "toTable": "zones",
+      "toColumn": "id"
+    },
+    {
+      "fromTable": "invoices",
+      "fromColumn": "circle_id",
+      "toTable": "circles",
+      "toColumn": "id"
+    },
+    {
+      "fromTable": "invoices",
+      "fromColumn": "corporation_id",
+      "toTable": "corporations",
+      "toColumn": "id"
+    },
+    {
+      "fromTable": "notifications",
+      "fromColumn": "user_id",
+      "toTable": "users",
+      "toColumn": "id"
+    },
+    {
+      "fromTable": "payments",
+      "fromColumn": "request_id",
+      "toTable": "waste_requests",
+      "toColumn": "id"
+    },
+    {
+      "fromTable": "payments",
+      "fromColumn": "user_id",
+      "toTable": "users",
+      "toColumn": "id"
+    },
+    {
+      "fromTable": "photos",
+      "fromColumn": "request_id",
+      "toTable": "waste_requests",
+      "toColumn": "id"
+    },
+    {
+      "fromTable": "users",
+      "fromColumn": "circle_id",
+      "toTable": "circles",
+      "toColumn": "id"
+    },
+    {
+      "fromTable": "wards",
+      "fromColumn": "circle_id",
+      "toTable": "circles",
+      "toColumn": "id"
+    },
+    {
+      "fromTable": "waste_requests",
+      "fromColumn": "circle_id",
+      "toTable": "circles",
+      "toColumn": "id"
+    },
+    {
+      "fromTable": "waste_requests",
+      "fromColumn": "driver_id",
+      "toTable": "users",
+      "toColumn": "id"
+    },
+    {
+      "fromTable": "waste_requests",
+      "fromColumn": "transfer_station_id",
+      "toTable": "transfer_stations",
+      "toColumn": "id"
+    },
+    {
+      "fromTable": "waste_requests",
+      "fromColumn": "ward_id",
+      "toTable": "wards",
+      "toColumn": "id"
+    },
+    {
+      "fromTable": "waste_requests",
+      "fromColumn": "zone_id",
+      "toTable": "zones",
+      "toColumn": "id"
+    },
+    {
+      "fromTable": "weighments",
+      "fromColumn": "request_id",
+      "toTable": "waste_requests",
+      "toColumn": "id"
+    },
+    {
+      "fromTable": "zones",
+      "fromColumn": "corporation_id",
+      "toTable": "corporations",
+      "toColumn": "id"
+    }
+  ]
+}
