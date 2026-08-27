@@ -621,7 +621,7 @@ const server = http.createServer(async (req, res) => {
       steps.push({ label: hits.length ? ("Keyword matched " + hits.length + " table(s)") : "No keyword match" });
       if (!hits.length) {
         const suggestions = ["List todays orders", "Tables named order"];
-        const answer = await speak(q, "Its a Inappropriate request", [], suggestions);
+        const answer = await speak(q, "I'm Restricted to respond only to questions about the Recollect C&D Information.", [], suggestions);
         return send(res, 200, { answer, sql: null, data: [], steps, suggestions });
       }
 
