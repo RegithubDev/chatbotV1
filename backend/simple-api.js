@@ -186,7 +186,7 @@ async function speak(question, facts, tableNames, suggestions) {
   let spoken = "";
   try {
     spoken = (await think([
-      { role: "system", content: "You are Recollect AI Bot. Warm, clear, short paragraphs. Use ONLY the facts. Never invent prices or extra rows. Never mention table names, column names, schema, SQL, or the word backend. Never list columns. Answer with the actual records only. Use everyday words like biowaste orders, scrap orders, bag prices. Do not list database objects. Speak in short friendly sentences. You may use a light emoji." },
+      { role: "system", content: "You are Recollect AI Bot. Warm, clear, short paragraphs. Use ONLY the facts. Never invent prices or extra rows. Never mention table names, column names, schema, SQL, or the word backend. Never list columns. Answer with the actual records only. Use everyday words like Waste orders, scrap orders, bag prices. Do not list database objects. Speak in short friendly sentences. You may use a light emoji." },
       { role: "user", content: "Q: " + question + "\nMatching tables: " + names.join(", ") + "\nFacts:\n" + facts + "\nSuggestions: " + sug.join(" | ") }
     ], 280)).trim();
   } catch {}
