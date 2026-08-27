@@ -581,7 +581,32 @@ const server = http.createServer(async (req, res) => {
       }
 
 
-      if (/how many orders|number of orders|total orders|count of orders/i.test(q)) {
+            if (/how many orders|number of orders|total orders|count of orders|orders we got/i.test(q)) {
+        const orderTables = cat.tables.filter((tb) => /order|request/i.test(tb.name) && !/cart|log|analytics|permission|file/i.test(tb.name));
+        const dbc = await pool();
+        const bits = [];
+        try {
+          for (const tb of orderTables.slice(0, 8)) {
+            try {
+              const cols = (tb.columns || []).map((c) => (typeof c === "string" ? c : c.name));
+              const dc = cols.find((n) => /created_at|order_date|request_date|created_on/i.test(n));
+              let sql = "SELECT COUNT(*) AS c FROM `" + tb.name + "`";
+              if (/today/i.test(q) && dc) sql += " WHERE DATE(`" + dc + "`) = CURDATE()";
+              if (/yesterday/i.test(q) && dc) sql += " WHERE DATE(`" + dc + "`) = DATE_SUB(CURDATE(), INTERVAL 1 DAY)";
+              const [r] = await dbc.query(sql);
+              bits.push({ label: prettyName(tb.name), count: Number(r[0].c || 0) });
+            } catch {}
+          }
+        } finally { await dbc.end(); }
+        const total = bits.reduce((s, b) => s + b.count, 0);
+        const when = /yesterday/i.test(q) ? "yesterday" : (/today/i.test(q) ? "today" : "");
+        return send(res, 200, {
+          answer: "You have **" + total.toLocaleString() + "** orders" + (when ? " " + when : "") + ".",
+          data: bits,
+          suggestions: []
+        });
+      }
+      if (false && /how many orders|number of orders|total orders|count of orders/i.test(q)) {
         const orderTables = cat.tables.filter((tb) => /order/i.test(tb.name) && !/cart|log|usedbag|analytics|permission/i.test(tb.name));
         const dbc = await pool();
         const bits = [];
@@ -695,6 +720,7 @@ const server = http.createServer(async (req, res) => {
 const { spawn } = require("child_process");
 spawn(process.execPath, [require("path").join(__dirname, "sync-lite.js")], { stdio: "inherit" });
 server.listen(PORT, "0.0.0.0", () => console.log("Recollect AI Bot http://0.0.0.0:" + PORT));
+
 
 
 
