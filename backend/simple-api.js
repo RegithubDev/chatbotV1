@@ -620,8 +620,8 @@ const server = http.createServer(async (req, res) => {
       const hits = matchAll(cat, q);
       steps.push({ label: hits.length ? ("Keyword matched " + hits.length + " table(s)") : "No keyword match" });
       if (!hits.length) {
-        const suggestions = ["How many tables are there", "Tables named order"];
-        const answer = await speak(q, "I could not match that wording to a table or column.", [], suggestions);
+        const suggestions = ["List todays orders", "Tables named order"];
+        const answer = await speak(q, "Its a Inappropriate request", [], suggestions);
         return send(res, 200, { answer, sql: null, data: [], steps, suggestions });
       }
 
