@@ -270,17 +270,33 @@ function matchEntityTables(catalog, q) {
 function isFollowUp(q) {
   return /(more\s+de|tell me more|explain|those|that list|same|previous|what about|continue|and\b)/i.test(String(q));
 }
-function liveSuggestions(q) {
-  const cat = (typeof loadCatalog === "function") ? loadCatalog() : null;
-  if (!cat) return ["How many tables are connected?"];
-  const names = cat.tables.map((x) => String(x.name || "").toLowerCase());
-  const has = (re) => names.some((n) => re.test(n));
-  const out = [];
-  if (has(/order/)) out.push("What is the latest order?");
-  if (has(/customer|citizen|user/)) out.push("How many customers do I have?");
-  if (has(/vehicle/)) out.push("How many vehicles do I have?");
-  out.push("How many tables are connected?");
-  return [...new Set(out)].slice(0, 5);
+let suggestionCache = { at: 0, items: [] };
+async function generateSuggestions(cat) {
+  if (!cat || !cat.tables || !cat.tables.length) return ["How many tables are connected?"];
+  if (Date.now() - suggestionCache.at < 10 * 60 * 1000 && suggestionCache.items.length) return suggestionCache.items;
+  const index = cat.tables.map((t) => {
+    const cols = (t.columns || []).map((c) => (typeof c === "string" ? c : c.name)).slice(0, 6);
+    const label = String(t.name || "").replace(/^backend_|^auth_|^cnd_|^django_/, "").replace(/_/g, " ");
+    return label + (cols.length ? " [" + cols.join(", ") + "]" : "");
+  }).slice(0, 80).join("\n");
+  let items = [];
+  try {
+    const raw = await think([
+      { role: "system", content: "Write 5 short questions a business user would ask this database. Everyday English. No SQL. No raw table names. No the word backend. One question per line. No numbering." },
+      { role: "user", content: "Database lists:\n" + index }
+    ], 180);
+    items = String(raw || "").split(/\r?\n/).map((s) => s.replace(/^\d+[\).:-]\s*/, "").replace(/^[-*]\s*/, "").trim()).filter((s) => s.length > 8 && s.length < 80).slice(0, 6);
+  } catch (e) { console.log("suggest", e.message); }
+  if (!items.length) {
+    items = cat.tables.slice(0, 5).map((t) => "Tell me about " + String(t.name || "").replace(/^backend_|^auth_/, "").replace(/_/g, " "));
+  }
+  suggestionCache = { at: Date.now(), items };
+  return items;
+}
+function liveSuggestions(cat) {
+  if (suggestionCache.items.length) return suggestionCache.items;
+  if (!cat || !cat.tables) return ["How many tables are connected?"];
+  return cat.tables.slice(0, 5).map((t) => "Tell me about " + String(t.name || "").replace(/^backend_|^auth_/, "").replace(/_/g, " "));
 }
 const server = http.createServer(async (req, res) => {
   if (req.method === "OPTIONS") {
@@ -597,6 +613,7 @@ const server = http.createServer(async (req, res) => {
 const { spawn } = require("child_process");
 spawn(process.execPath, [require("path").join(__dirname, "sync-lite.js")], { stdio: "inherit" });
 server.listen(PORT, "0.0.0.0", () => console.log("Recollect AI Bot http://0.0.0.0:" + PORT));
+
 
 
 
