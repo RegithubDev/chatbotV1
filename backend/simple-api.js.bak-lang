@@ -197,7 +197,7 @@ function pickCols(names) {
 }
 function greet(q) {
   const s = q.toLowerCase().trim();
-  if (/^(hi|hello|hey|yo|hai|namaste|vanakkam)[\s!.,]*$/.test(s)) return "Hi. I am Recollect AI Bot. Ask in English, Telugu, Hindi, Tamil, Kannada, Malayalam, or another Indian language — I will reply in the same language. I remember this chat until you start a new one.";
+  if (/^(hi|hello|hey|yo|hai|namaste|vanakkam)[\s!.,]*$/.test(s)) return "Hi. I am Recollect AI Bot. Ask about your connected database in normal language. I remember this chat until you start a new one.";
   if (/how are you/.test(s)) return "Doing well — ready when you are.";
   if (/who are you|what can you do/.test(s)) return "I search every matching table, read real rows, and explain them in plain language. I will not invent numbers.";
   if (/thank/.test(s)) return "You're welcome.";
@@ -209,7 +209,7 @@ async function speak(question, facts, tableNames, suggestions) {
   let spoken = "";
   try {
     spoken = (await think([
-      { role: "system", content: "You are Recollect AI Bot. Reply in the same language the user used (English, Hindi, Telugu, Tamil, Kannada, Malayalam, Marathi, Bengali, Gujarati, Punjabi, Urdu). Short and clear. If facts from the database are provided, use ONLY those facts and do not invent rows. If the user asks math, compute it. If they ask guidelines or how to use the bot, explain briefly. Never mention SQL or raw table names. Dates like Aug 16, 2026." },
+      { role: "system", content: "You are Recollect AI Bot. Warm, clear, short paragraphs. Use ONLY the facts. Never invent prices or extra rows. Never mention table names, column names, schema, SQL, or the word backend. Never list columns. Answer with the actual records only. Use everyday words like Waste orders, scrap orders, bag prices. Do not list database objects. Speak in short friendly sentences. You may use a light emoji." },
       { role: "user", content: "Q: " + question + "\nMatching tables: " + names.join(", ") + "\nFacts:\n" + facts + "\nSuggestions: " + sug.join(" | ") }
     ], 280)).trim();
   } catch {}
@@ -291,7 +291,7 @@ function matchEntityTables(catalog, q) {
   }).filter((x) => x.score > 0).sort((a, b) => b.score - a.score || b.inbound - a.inbound);
 }
 function isFollowUp(q) {
-  return /(more\s+de|tell me more|explain|those|that list|same|previous|what about|continue|^and\b|yesterday|today|tomorrow)\??$/i.test(String(q).trim()) || String(q).trim().length < 16;
+  return /(more\s+de|tell me more|explain|those|that list|same|previous|what about|continue|and\b)/i.test(String(q));
 }
 let suggestionCache = { at: 0, items: [] };
 async function generateSuggestions(cat) {
@@ -367,16 +367,6 @@ function slimData(q, rows) {
     return o;
   });
 }
-async function englishKeys(q, cat) {
-  const labels = (cat && cat.tables ? cat.tables : []).map((t) => String(t.name || "").replace(/^backend_|^auth_/, "").replace(/_/g, " ")).slice(0, 60).join(", ");
-  try {
-    const raw = await think([
-      { role: "system", content: "Return 2 to 6 English search words only, comma separated. Map the user question (any language) onto these database topics. No sentences." },
-      { role: "user", content: "Topics: " + labels + "\nQuestion: " + q }
-    ], 60);
-    return String(raw || "").replace(/[^a-zA-Z0-9,\s]/g, " ").split(/[,\s]+/).filter((w) => w.length > 2).slice(0, 8).join(" ");
-  } catch { return ""; }
-}
 const server = http.createServer(async (req, res) => {
   if (req.method === "OPTIONS") {
     res.writeHead(204, { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET,POST,OPTIONS", "Access-Control-Allow-Headers": "Content-Type" });
@@ -415,15 +405,7 @@ const server = http.createServer(async (req, res) => {
     }
     if (req.method === "POST" && req.url === "/ask") {
       const body = await readBody(req);
-                        const rawQ = String(body.question || "").trim();
-      const hello0 = greet(rawQ);
-      if (hello0) return send(res, 200, { answer: hello0, data: [], suggestions: liveSuggestions(loadCatalog()) });
-      let q = rawQ;
-      global.__lastQ = q;
-      try {
-        const keys = await englishKeys(q, loadCatalog());
-        if (keys) q = q + " " + keys;
-      } catch (e) { console.log("keys", e.message); }
+            let q = String(body.question || "").trim(); global.__lastQ = q;
       const _mem = sess(body.chatId);
       if (_mem && isFollowUp(q) && _mem.lastQ) {
         q = _mem.lastQ + ". " + q;
@@ -642,13 +624,7 @@ const server = http.createServer(async (req, res) => {
       steps.push({ label: hits.length ? ("Keyword matched " + hits.length + " table(s)") : "No keyword match" });
       if (!hits.length) {
         const suggestions = ["how many orders we got today", "how many orders we got Yesterday", "how many customers we have", "what is the latest order"];
-                const looksMath = /^[\d\s+\-*/().%x]+$/.test(q.replace(/what is|equals|calculate|compute/ig, "").trim()) || /how much is|what is \d|calculate|compute/i.test(q);
-        let answer;
-        if (looksMath) {
-          answer = await speak(q, "No database rows. Today is " + todayStamp() + ". Do the arithmetic. Reply in the user language.", [], []);
-        } else {
-          answer = await speak(q, "No table matched. Today is " + todayStamp() + ". If this is chat, math, or how-to, answer helpfully in the user language. If they asked for records, say you could not find that in the connected data. Do NOT say you are restricted to C and D only.", [], suggestions);
-        }
+        const answer = await speak(q, "I'm Restricted to respond only to questions about the Recollect C&D Information.", [], suggestions);
         return send(res, 200, { answer, sql: null, data: [], steps, suggestions });
       }
 
@@ -715,12 +691,6 @@ const server = http.createServer(async (req, res) => {
 const { spawn } = require("child_process");
 spawn(process.execPath, [require("path").join(__dirname, "sync-lite.js")], { stdio: "inherit" });
 server.listen(PORT, "0.0.0.0", () => console.log("Recollect AI Bot http://0.0.0.0:" + PORT));
-
-
-
-
-
-
 
 
 
