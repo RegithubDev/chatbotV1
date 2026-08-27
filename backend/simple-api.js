@@ -24,7 +24,7 @@ function saveSessions() {
   } catch {}
 }
 loadSessions();
-const STOP = new Set("a an the this that these those is are was were be been being and or not of to in for on from by with as at it its if so do did does how many much what which who where when why please table tables database data row rows record records all some any get fetch select count number named name names give tell about type types of there here show list me my our your connected exist exists based".split(" "));
+const STOP = new Set("a an the this that these those is are was were be been being and or not of to in for on from by with as at it its if so do did does how many much what which who where when why please table tables database data row rows record records all some any get fetch select count number named name names give tell about type types of there here show list me my our your connected exist exists based today yesterday tomorrow date dates created todays".split(" "));
 
 function rawSend(res, code, body) {
   res.writeHead(code, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
@@ -216,7 +216,7 @@ async function speak(question, facts, tableNames, suggestions) {
   const bad = !spoken || /select\s+/i.test(spoken) || (/\$\d/.test(spoken) && String(facts).indexOf("$") < 0);
   if (bad) {
     spoken = facts;
-    if (names.length) spoken += "\n\nMatching tables for that keyword:\n" + names.map((n, i) => (i + 1) + ". " + n).join("\n");
+    /* do not list table names */
   }
   if (sug.length && !/you can also ask/i.test(spoken)) { /* chips only, do not append to answer */ }
   return spoken;
@@ -291,7 +291,7 @@ function matchEntityTables(catalog, q) {
   }).filter((x) => x.score > 0).sort((a, b) => b.score - a.score || b.inbound - a.inbound);
 }
 function isFollowUp(q) {
-  return /(more\s+de|tell me more|explain|those|that list|same|previous|what about|continue|^and\b|yesterday|today|tomorrow)\??$/i.test(String(q).trim()) || String(q).trim().length < 16;
+  return /^(more\s+de.*|tell me more.*|those|that list|same|previous|yesterday\??|today\??|and\s+yesterday\??)$/i.test(String(q).trim());
 }
 let suggestionCache = { at: 0, items: [] };
 async function generateSuggestions(cat) {
@@ -715,6 +715,7 @@ const server = http.createServer(async (req, res) => {
 const { spawn } = require("child_process");
 spawn(process.execPath, [require("path").join(__dirname, "sync-lite.js")], { stdio: "inherit" });
 server.listen(PORT, "0.0.0.0", () => console.log("Recollect AI Bot http://0.0.0.0:" + PORT));
+
 
 
 
