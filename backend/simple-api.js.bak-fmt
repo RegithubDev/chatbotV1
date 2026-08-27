@@ -49,16 +49,6 @@ function send(res, code, body) {
     }
     if (body && Array.isArray(body.data)) body.data = slimData(qn, body.data);
   } catch (e) { console.log("slim", e.message); }
-  try {
-    const qn = global.__lastQ || "";
-    if (body && typeof body.answer === "string") {
-      body.answer = body.answer.replace(/\n+You can also ask:[\s\S]*$/i, "").trim();
-    }
-    if (body && Array.isArray(body.suggestions)) {
-      body.suggestions = body.suggestions.filter((s) => !/^show /i.test(String(s)));
-    }
-    if (body && Array.isArray(body.data)) body.data = slimData(qn, body.data);
-  } catch (e) { console.log("slim", e.message); }
   if (body && typeof body === "object" && body.answer != null && String(body.answer).trim() === "") body.answer = null;
   if (body && typeof body === "object" && (body.answer == null) && code === 200) {
     body.answer = "I could not build an answer from the connected database for that. Try a name that exists in your data.";
@@ -688,7 +678,6 @@ const server = http.createServer(async (req, res) => {
 const { spawn } = require("child_process");
 spawn(process.execPath, [require("path").join(__dirname, "sync-lite.js")], { stdio: "inherit" });
 server.listen(PORT, "0.0.0.0", () => console.log("Recollect AI Bot http://0.0.0.0:" + PORT));
-
 
 
 

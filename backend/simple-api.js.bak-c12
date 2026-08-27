@@ -39,26 +39,6 @@ function remember(mem, q, a) {
   try { saveSessions(); } catch {}
 }
 function send(res, code, body) {
-  try {
-    const qn = global.__lastQ || "";
-    if (body && typeof body.answer === "string") {
-      body.answer = body.answer.replace(/\n+You can also ask:[\s\S]*$/i, "").trim();
-    }
-    if (body && Array.isArray(body.suggestions)) {
-      body.suggestions = body.suggestions.filter((s) => !/^show /i.test(String(s)));
-    }
-    if (body && Array.isArray(body.data)) body.data = slimData(qn, body.data);
-  } catch (e) { console.log("slim", e.message); }
-  try {
-    const qn = global.__lastQ || "";
-    if (body && typeof body.answer === "string") {
-      body.answer = body.answer.replace(/\n+You can also ask:[\s\S]*$/i, "").trim();
-    }
-    if (body && Array.isArray(body.suggestions)) {
-      body.suggestions = body.suggestions.filter((s) => !/^show /i.test(String(s)));
-    }
-    if (body && Array.isArray(body.data)) body.data = slimData(qn, body.data);
-  } catch (e) { console.log("slim", e.message); }
   if (body && typeof body === "object" && body.answer != null && String(body.answer).trim() === "") body.answer = null;
   if (body && typeof body === "object" && (body.answer == null) && code === 200) {
     body.answer = "I could not build an answer from the connected database for that. Try a name that exists in your data.";
@@ -215,7 +195,7 @@ async function speak(question, facts, tableNames, suggestions) {
     spoken = facts;
     if (names.length) spoken += "\n\nMatching tables for that keyword:\n" + names.map((n, i) => (i + 1) + ". " + n).join("\n");
   }
-  if (sug.length && !/you can also ask/i.test(spoken)) { /* chips only, do not append to answer */ }
+  if (sug.length && !/you can also ask/i.test(spoken)) spoken += "\n\nYou can also ask:\n- " + sug.join("\n- ");
   return spoken;
 }
 
@@ -318,52 +298,6 @@ function liveSuggestions(cat) {
   if (!cat || !cat.tables) return ["How many tables are connected?"];
   return cat.tables.slice(0, 5).map((t) => "Tell me about " + String(t.name || "").replace(/^backend_|^auth_/, "").replace(/_/g, " "));
 }
-function rowsForQuestion(q, rows) {
-  if (!Array.isArray(rows) || !rows.length) return rows;
-  const m = String(q).match(/\b(?:circle\s*)?c?\s*(\d{1,3})\b/i);
-  if (m) {
-    const n = m[1];
-    const hit = rows.filter((r) => {
-      const blob = Object.values(r).map((v) => String(v || "")).join(" ");
-      return new RegExp("(?:^|\\b)(?:C)?" + n + "\\b|Circle\\s*" + n + "\\b", "i").test(blob);
-    });
-    if (hit.length) return hit;
-  }
-  const extra = String(q).toLowerCase().replace(/tell me about|about this|details|please/g, " ");
-  const words = extra.split(/[^a-z0-9]+/).filter((w) => w.length > 3 && !/circle|tell|about|this/.test(w));
-  if (words.length) {
-    const hit = rows.filter((r) => {
-      const blob = Object.values(r).join(" ").toLowerCase();
-      return words.some((w) => blob.includes(w));
-    });
-    if (hit.length) return hit;
-  }
-  return rows;
-}
-function fmtVal(v) {
-  if (v == null || v === "") return v;
-  const d = v instanceof Date ? v : (typeof v === "string" && /^\d{4}-\d{2}-\d{2}/.test(v) ? new Date(v) : null);
-  if (d && !isNaN(d.getTime())) {
-    return d.toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric" });
-  }
-  return v;
-}
-function slimData(q, rows) {
-  if (!Array.isArray(rows)) return rows;
-  let out = rows;
-  const m = String(q || "").match(/circle\s*(\d{1,3})|\bC(\d{1,3})\b/i);
-  if (m) {
-    const n = m[1] || m[2];
-    const hit = rows.filter((r) => String((r && (r.code || r.name)) || "").match(new RegExp("C?" + n + "\\b|Circle\\s*" + n + "\\b", "i")));
-    if (hit.length) out = hit;
-  }
-  return out.map((r) => {
-    if (!r || typeof r !== "object") return r;
-    const o = {};
-    for (const [k, v] of Object.entries(r)) o[k] = fmtVal(v);
-    return o;
-  });
-}
 const server = http.createServer(async (req, res) => {
   if (req.method === "OPTIONS") {
     res.writeHead(204, { "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET,POST,OPTIONS", "Access-Control-Allow-Headers": "Content-Type" });
@@ -402,7 +336,7 @@ const server = http.createServer(async (req, res) => {
     }
     if (req.method === "POST" && req.url === "/ask") {
       const body = await readBody(req);
-            let q = String(body.question || "").trim(); global.__lastQ = q;
+            let q = String(body.question || "").trim();
       const _mem = sess(body.chatId);
       if (_mem && isFollowUp(q) && _mem.lastQ) {
         q = _mem.lastQ + ". " + q;
@@ -442,7 +376,7 @@ const server = http.createServer(async (req, res) => {
           return send(res, 200, {
             answer,
             sql: null,
-            data: rowsForQuestion(q, typeof cleanRows !== "undefined" ? cleanRows : rows),
+            data: (typeof cleanRows !== 'undefined' ? cleanRows : rows),
             suggestions: liveSuggestions(q),
             steps: [{ label: "Used this chat: " + (mem0.lastQ || "") }, { label: "Read more columns from the same list" }]
           });
@@ -598,7 +532,7 @@ const server = http.createServer(async (req, res) => {
           answer += bits.filter((b) => b.count).map((b) => b.label + " has " + b.count.toLocaleString()).join(", ") + ".";
         }
         const suggestions = ["What is the latest biowaste order?", "How many scrap orders?", "Bag prices"];
-        
+        answer += "\n\nYou can also ask:\n- " + suggestions.join("\n- ");
         return send(res, 200, { answer, sql: null, data: [], suggestions, steps: [{ label: "Counted every order group" }] });
       }
 
@@ -657,7 +591,7 @@ const server = http.createServer(async (req, res) => {
         const answer = await speak(q, facts, names, suggestions);
         const data = blocks.filter((b) => b.row).map((b) => Object.assign({ type: orderKind(b.table) }, b.row));
         mem.lastTables = names;
-        mem.lastData = rowsForQuestion(q, data);
+        mem.lastData = data;
         return send(res, 200, { answer, sql: sqls.join(";\n"), data, tablesUsed: names, steps, suggestions });
       }
 
@@ -671,11 +605,11 @@ const server = http.createServer(async (req, res) => {
       const db = await pool();
       let rows = [];
       try { rows = (await db.query(sql))[0].slice(0, 30); } finally { await db.end(); }
-      rows = rowsForQuestion(q, rows); const facts = (rows.length ? rows.map((r, i) => (i + 1) + ". " + Object.entries(r).filter(([, v]) => v !== null && v !== "").map(([k, v]) => k.replace(/_/g, " ") + ": " + v).join("; ")).join("\n") : "0 rows.") + (names.length > 1 ? ("\nOther matching tables: " + names.slice(1).join(", ")) : "");
+      const facts = (rows.length ? rows.map((r, i) => (i + 1) + ". " + Object.entries(r).filter(([, v]) => v !== null && v !== "").map(([k, v]) => k.replace(/_/g, " ") + ": " + v).join("; ")).join("\n") : "0 rows.") + (names.length > 1 ? ("\nOther matching tables: " + names.slice(1).join(", ")) : "");
       const answer = await speak(q, facts, names, suggestions);
       mem.lastTables = names;
-      mem.lastData = rowsForQuestion(q, rows);
-      return send(res, 200, { answer, sql, data: rowsForQuestion(q, typeof cleanRows !== "undefined" ? cleanRows : rows), tablesUsed: names, steps, suggestions });
+      mem.lastData = rows;
+      return send(res, 200, { answer, sql, data: (typeof cleanRows !== 'undefined' ? cleanRows : rows), tablesUsed: names, steps, suggestions });
     }
         if (req.method === "POST" && req.url && req.url.indexOf("/ask") === 0) {
       return send(res, 200, { answer: "I could not match that to the connected database. Ask about a person, vehicle, order, or table you know is in this system.", data: [], suggestions: (typeof liveSuggestions === "function" ? liveSuggestions("help") : []) });
@@ -688,10 +622,6 @@ const server = http.createServer(async (req, res) => {
 const { spawn } = require("child_process");
 spawn(process.execPath, [require("path").join(__dirname, "sync-lite.js")], { stdio: "inherit" });
 server.listen(PORT, "0.0.0.0", () => console.log("Recollect AI Bot http://0.0.0.0:" + PORT));
-
-
-
-
 
 
 
